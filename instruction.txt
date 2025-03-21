@@ -1,0 +1,151 @@
+AI Coder Instruction: Interactive HTML Website for AI Project Brief Generator
+
+Overview:
+
+You will create an interactive, responsive HTML website designed to gather detailed user input to produce a structured project brief document. This document will later serve as clear input for AI coding assistants or human developers.
+
+Technology Stack:
+
+Frontend: HTML5, CSS3, JavaScript (Vanilla or any preferred framework)
+
+Libraries: jsPDF (or similar) for generating downloadable PDFs
+
+Design: Simple, clean, and intuitive UI using modern CSS
+
+Step-by-Step Requirements:
+
+Step 1: Create Web Structure
+
+Header: Clear title: "AI Project Brief Generator"
+
+Navigation: Simple vertical or horizontal navigation between form sections:
+
+Project Overview
+
+Platform & Technical Requirements
+
+Design & Visuals
+
+User Interaction & Experience
+
+Content & Data Management
+
+Performance & Compatibility
+
+Additional Features
+
+Step 2: Form Fields Implementation
+
+Implement user input forms using semantic HTML:
+
+Text Inputs: Project Name, Goal, Description.
+
+Dropdown/Radio Buttons/Checkboxes: Platform types, technologies, and frameworks selection.
+
+Color Pickers: Allow users to choose primary and secondary colors.
+
+Textarea: Allow detailed explanations (for descriptions, additional notes, etc.).
+
+Organize fields clearly under each category listed in Step 1.
+
+Step 3: Responsive & User-Friendly Styling
+
+Use CSS to style the website with:
+
+Clean padding and margins.
+
+Consistent typography (sans-serif recommended).
+
+Visual feedback for form interactions (hover effects, focus state).
+
+Responsive design optimized for mobile, tablet, and desktop.
+
+Step 4: Data Validation
+
+Implement basic JavaScript form validation:
+
+Ensure required fields are filled.
+
+Display inline validation error messages clearly.
+
+Step 5: Generate Document (PDF)
+
+Implement a JavaScript library (recommended jsPDF) to generate a structured PDF upon submission:
+
+PDF structure matches the provided "AI Project Brief" template exactly.
+
+Include all user inputs formatted neatly.
+
+Provide a timestamp for document generation.
+
+Automatically prompt users to download the PDF.
+
+Step 6: Document Output Structure
+
+Generated PDF will follow this clear format:
+
+AI Project Brief
+
+1. Project Overview
+   - Name:
+   - Goal:
+   - Description:
+
+2. Platform & Technical Requirements
+   - Application Type:
+   - Target Platforms:
+   - Preferred Technologies:
+     - Frontend:
+     - Backend:
+     - Database:
+     - Hosting:
+     - APIs:
+
+3. Design & Visuals
+   - Art Style:
+   - Colors:
+   - Typography:
+   - Visual References:
+
+4. User Interaction & Experience
+   - Inputs:
+   - Outputs:
+
+5. Content & Data
+   - User Authentication:
+   - Data Storage & Privacy:
+   - Security Level:
+
+6. Performance & Compatibility
+   - Speed & Responsiveness:
+   - SEO & Accessibility:
+   - Browser Compatibility:
+
+7. Additional Features
+   - Features Requested:
+
+Additional Notes:
+
+Document Prepared On: (Auto-generated timestamp)
+
+Step 7: Testing & Validation
+
+Confirm PDF generation works seamlessly across modern browsers.
+
+Test responsiveness thoroughly.
+
+Optional (AI Recommendations Section):
+
+If integrating AI features:
+
+Provide AI-generated recommendations based on user input in a new section labeled "AI Recommendations".
+
+Final Deliverables:
+
+Complete HTML, CSS, and JavaScript source code.
+
+Deployed version hosted on GitHub Pages or similar (optional).
+
+Readme with installation/setup instructions.
+
+This structured approach ensures a robust, user-friendly tool for effectively bridging human input and AI development.

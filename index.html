@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Planner</title>
+    <!-- Add Rubik font from Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+    <header>
+        <h1>App Planner</h1>
+        <p class="subtitle">Organize your idea for your next app</p>
+    </header>
+
+    <main>
+        <!-- Landing page -->
+        <div id="landing-page" class="landing-container">
+            <!-- Recent Projects Sidebar -->
+            <div class="recent-projects-panel">
+                <button class="toggle-recent-btn" aria-label="Show recent projects">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                </button>
+                <div class="projects-container">
+                    <h3>Recent Projects</h3>
+                    <div class="projects-list">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="welcome-card">
+                <div class="project-name-input">
+                    <label for="project-name-start">Project Name</label>
+                    <input type="text" id="project-name-start" name="project-name-start" placeholder="My Awesome App" required>
+                    <div class="validation-message"></div>
+                </div>
+                
+                <button class="start-planning-btn">Start Planning</button>
+            </div>
+        </div>
+        
+        <!-- Main planner (hidden initially) -->
+        <div id="planner-content" class="planner-content hidden">
+            <aside class="navigation">
+                <nav>
+                    <ul>
+                        <li><a href="#project-overview" class="nav-link active">1. Project Overview</a></li>
+                        <li><a href="#platform-tech" class="nav-link">2. Platform & Technical Requirements</a></li>
+                        <li><a href="#design-visuals" class="nav-link">3. Design & Visuals</a></li>
+                        <li><a href="#user-interaction" class="nav-link">4. User Interaction & Experience</a></li>
+                        <li><a href="#content-data" class="nav-link">5. Content & Data Management</a></li>
+                        <li><a href="#performance" class="nav-link">6. Performance & Compatibility</a></li>
+                        <li><a href="#additional-features" class="nav-link">7. Additional Features</a></li>
+                        <li><a href="#review-section" class="nav-link">8. Review</a></li>
+                    </ul>
+                </nav>
+            </aside>
+
+            <div class="form-container">
+                <div class="progress-bar-container">
+                    <div class="progress-steps">
+                        <div class="progress-step active" data-step="1">1</div>
+                        <div class="progress-step" data-step="2">2</div>
+                        <div class="progress-step" data-step="3">3</div>
+                        <div class="progress-step" data-step="4">4</div>
+                        <div class="progress-step" data-step="5">5</div>
+                        <div class="progress-step" data-step="6">6</div>
+                        <div class="progress-step" data-step="7">7</div>
+                        <div class="progress-step" data-step="8">8</div>
+                    </div>
+                    <div class="progress-labels">
+                        <span class="progress-label active">Overview</span>
+                        <span class="progress-label">Technical</span>
+                        <span class="progress-label">Design</span>
+                        <span class="progress-label">UX</span>
+                        <span class="progress-label">Data</span>
+                        <span class="progress-label">Performance</span>
+                        <span class="progress-label">Features</span>
+                        <span class="progress-label">Review</span>
+                    </div>
+                </div>
+                
+                <form id="brief-form">
+                    <!-- Project Overview -->
+                    <section id="project-overview" class="form-section active">
+                        <div class="section-header">
+                            <h2>1. Project Overview</h2>
+                            <button type="button" class="skip-btn" data-section="project-overview">Skip</button>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="project-name">Project Name:</label>
+                            <div class="input-with-uty">
+                                <input type="text" id="project-name" name="project-name" required>
+                                <div class="uty-checkbox">
+                                    <label><input type="checkbox" class="up-to-you" data-field="project-name"> AI decision</label>
+                                </div>
+                            </div>
+                            <div class="validation-message"></div>
+                        </div>
+                        
+                        <div class="collapsible-section" id="project-basics">
+                            <div class="collapsible-header">
+                                <h3>Project Basics</h3>
+                                <button type="button" class="toggle-btn" aria-label="Toggle section"></button>
+                            </div>
+                            <div class="collapsible-content">
+                                <div class="form-group">
+                                    <label for="project-goal">Goal:</label>
+                                    <div class="input-with-uty">
+                                        <input type="text" id="project-goal" name="project-goal" required>
+                                        <div class="uty-checkbox">
+                                            <label><input type="checkbox" class="up-to-you" data-field="project-goal"> AI decision</label>
+                                        </div>
+                                    </div>
+                                    <div class="validation-message"></div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="project-description">Description:</label>
+                                    <div class="input-with-uty">
+                                        <textarea id="project-description" name="project-description" rows="4" required></textarea>
+                                        <div class="uty-checkbox">
+                                            <label><input type="checkbox" class="up-to-you" data-field="project-description"> AI decision</label>
+                                        </div>
+                                    </div>
+                                    <div class="validation-message"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="collapsible-section" id="audience-scope">
+                            <div class="collapsible-header">
+                                <h3>Target Audience & Scope</h3>
+                                <button type="button" class="toggle-btn" aria-label="Toggle section"></button>
+                            </div>
+                            <div class="collapsible-content">
+                                <div class="form-group">
+                                    <label for="target-audience">Target Audience:</label>
+                                    <div class="input-with-uty">
+                                        <textarea id="target-audience" name="target-audience" rows="3" placeholder="Describe who will be using this product (e.g., age range, technical expertise, industry professionals)"></textarea>
+                                        <div class="uty-checkbox">
+                                            <label><input type="checkbox" class="up-to-you" data-field="target-audience"> AI decision</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="project-scope">Project Scope:</label>
+                                    <div class="input-with-uty">
+                                        <select id="project-scope" name="project-scope">
+                                            <option value="">Select project scope</option>
+                                            <option value="MVP">Minimum Viable Product</option>
+                                            <option value="Prototype">Prototype/Proof of Concept</option>
+                                            <option value="Full Product">Full Product</option>
+                                            <option value="Feature Addition">Feature Addition to Existing Product</option>
+                                        </select>
+                                        <div class="uty-checkbox">
+                                            <label><input type="checkbox" class="up-to-you" data-field="project-scope"> AI decision</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="nav-buttons">
+                            <button type="button" class="next-btn">Next</button>
+                        </div>
+                    </section>
+
+                    <!-- Platform & Technical Requirements -->
+                    <section id="platform-tech" class="form-section">
+                        <div class="section-header">
+                            <h2>2. Platform & Technical Requirements</h2>
+                            <button type="button" class="skip-btn" data-section="platform-tech">Skip</button>
+                        </div>
+                        
+                        <!-- Basic Platform Info -->
+                        <div class="form-group">
+                            <label for="app-type">Application Type:</label>
+                            <div class="input-with-uty">
+                                <select id="app-type" name="app-type" required>
+                                    <option value="">Select application type</option>
+                                    <option value="Web Application">Web Application</option>
+                                    <option value="Mobile App">Mobile App</option>
+                                    <option value="Desktop Application">Desktop Application</option>
+                                    <option value="API/Service">API/Service</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                                <div class="uty-checkbox">
+                                    <label><input type="checkbox" class="up-to-you" data-field="app-type"> AI decision</label>
+                                </div>
+                            </div>
+                            <div class="validation-message"></div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Target Platforms:</label>
+                            <div class="input-with-uty">
+                                <div class="checkbox-group">
+                                    <label><input type="checkbox" name="platform" value="iOS"> iOS</label>
+                                    <label><input type="checkbox" name="platform" value="Android"> Android</label>
+                                    <label><input type="checkbox" name="platform" value="Web"> Web</label>
+                                    <label><input type="checkbox" name="platform" value="Windows"> Windows</label>
+                                    <label><input type="checkbox" name="platform" value="macOS"> macOS</label>
+                                    <label><input type="checkbox" name="platform" value="Linux"> Linux</label>
+                                </div>
+                                <div class="uty-checkbox">
+                                    <label><input type="checkbox" class="up-to-you" data-field="platform"> AI decision</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Tech Stack (Collapsible) -->
+                        <div class="collapsible-section">
+                            <div class="collapsible-header">
+                                <h3>Technology Stack</h3>
+                                <button type="button" class="toggle-btn"></button>
+                            </div>
+                            <div class="collapsible-content">
+                                <div class="tech-inputs">
+                                    <div class="tech-input">
+                                        <label for="frontend">Frontend:</label>
+                                        <div class="input-with-uty">
+                                            <input type="text" id="frontend" name="frontend">
+                                            <div class="uty-checkbox">
+                                                <label><input type="checkbox" class="up-to-you" data-field="frontend"> AI decision</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="tech-input">
+                                        <label for="backend">Backend:</label>
+                                        <div class="input-with-uty">
+                                            <input type="text" id="backend" name="backend">
+                                            <div class="uty-checkbox">
+                                                <label><input type="checkbox" class="up-to-you" data-field="backend"> AI decision</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="tech-input">
+                                        <label for="database">Database:</label>
+                                        <div class="input-with-uty">
+                                            <input type="text" id="database" name="database">
+                                            <div class="uty-checkbox">
+                                                <label><input type="checkbox" class="up-to-you" data-field="database"> AI decision</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="tech-input">
+                                        <label for="hosting">Hosting:</label>
+                                        <div class="input-with-uty">
+                                            <input type="text" id="hosting" name="hosting">
+                                            <div class="uty-checkbox">
+                                                <label><input type="checkbox" class="up-to-you" data-field="hosting"> AI decision</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="tech-input">
+                                        <label for="apis">APIs:</label>
+                                        <div class="input-with-uty">
+                                            <input type="text" id="apis" name="apis">
+                                            <div class="uty-checkbox">
+                                                <label><input type="checkbox" class="up-to-you" data-field="apis"> AI decision</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Timeline and Constraints (Collapsible) -->
+                        <div class="collapsible-section">
+                            <div class="collapsible-header">
+                                <h3>Project Timeline & Constraints</h3>
+                                <button type="button" class="toggle-btn"></button>
+                            </div>
+                            <div class="collapsible-content">
+                                <div class="form-group">
+                                    <label for="timeline">Project Timeline:</label>
+                                    <div class="input-with-uty">
+                                        <select id="timeline" name="timeline">
+                                            <option value="">Select expected timeline</option>
+                                            <option value="Under 1 month">Under 1 month</option>
+                                            <option value="1-3 months">1-3 months</option>
+                                            <option value="3-6 months">3-6 months</option>
+                                            <option value="6-12 months">6-12 months</option>
+                                            <option value="Over 12 months">Over 12 months</option>
+                                        </select>
+                                        <div class="uty-checkbox">
+                                            <label><input type="checkbox" class="up-to-you" data-field="timeline"> AI decision</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="technical-constraints">Technical Constraints:</label>
+                                    <div class="input-with-uty">
+                                        <textarea id="technical-constraints" name="technical-constraints" rows="3" placeholder="Any technical limitations or constraints to consider (e.g., legacy systems, compliance requirements, bandwidth limitations)"></textarea>
+                                        <div class="uty-checkbox">
+                                            <label><input type="checkbox" class="up-to-you" data-field="technical-constraints"> AI decision</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="nav-buttons">
+                            <button type="button" class="prev-btn">Previous</button>
+                            <button type="button" class="next-btn">Next</button>
+                        </div>
+                    </section>
+
+                    <!-- Design & Visuals -->
+                    <section id="design-visuals" class="form-section">
+                        <div class="section-header">
+                            <h2>3. Design & Visuals</h2>
+                            <button type="button" class="skip-btn" data-section="design-visuals">Skip</button>
+                        </div>
+                        
+                        <div class="collapsible-section" id="visual-style">
+                            <div class="collapsible-header">
+                                <h3>Visual Style</h3>
+                                <button type="button" class="toggle-btn" aria-label="Toggle section"></button>
+                            </div>
+                            <div class="collapsible-content">
+                                <div class="form-group">
+                                    <label for="art-style">Art Style:</label>
+                                    <div class="input-with-uty">
+                                        <input type="text" id="art-style" name="art-style">
+                                        <div class="uty-checkbox">
+                                            <label><input type="checkbox" class="up-to-you" data-field="art-style"> AI decision</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>Colors:</label>
+                                    <div class="input-with-uty">
+                                        <div class="color-pickers">
+                                            <div class="color-picker">
+                                                <label for="primary-color">Primary:</label>
+                                                <input type="color" id="primary-color" name="primary-color" value="#4285f4">
+                                            </div>
+                                            <div class="color-picker">
+                                                <label for="secondary-color">Secondary:</label>
+                                                <input type="color" id="secondary-color" name="secondary-color" value="#34a853">
+                                            </div>
+                                        </div>
+                                        <div class="uty-checkbox">
+                                            <label><input type="checkbox" class="up-to-you" data-field="colors"> AI decision</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="collapsible-section" id="typography-references">
+                            <div class="collapsible-header">
+                                <h3>Typography & References</h3>
+                                <button type="button" class="toggle-btn" aria-label="Toggle section"></button>
+                            </div>
+                            <div class="collapsible-content">
+                                <div class="form-group">
+                                    <label for="typography">Typography:</label>
+                                    <div class="input-with-uty">
+                                        <input type="text" id="typography" name="typography">
+                                        <div class="uty-checkbox">
+                                            <label><input type="checkbox" class="up-to-you" data-field="typography"> AI decision</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="visual-references">Visual References:</label>
+                                    <div class="input-with-uty">
+                                        <textarea id="visual-references" name="visual-references" rows="3"></textarea>
+                                        <div class="uty-checkbox">
+                                            <label><input type="checkbox" class="up-to-you" data-field="visual-references"> AI decision</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="nav-buttons">
+                            <button type="button" class="prev-btn">Previous</button>
+                            <button type="button" class="next-btn">Next</button>
+                        </div>
+                    </section>
+
+                    <!-- User Interaction & Experience -->
+                    <section id="user-interaction" class="form-section">
+                        <div class="section-header">
+                            <h2>4. User Interaction & Experience</h2>
+                            <button type="button" class="skip-btn" data-section="user-interaction">Skip</button>
+                        </div>
+                        
+                        <div class="collapsible-section" id="user-interaction-details">
+                            <div class="collapsible-header">
+                                <h3>Interaction Details</h3>
+                                <button type="button" class="toggle-btn" aria-label="Toggle section"></button>
+                            </div>
+                            <div class="collapsible-content">
+                                <div class="form-group">
+                                    <label for="inputs">Inputs:</label>
+                                    <div class="input-with-uty">
+                                        <textarea id="inputs" name="inputs" rows="3" placeholder="Describe user inputs (e.g., text entry, file upload, voice commands)"></textarea>
+                                        <div class="uty-checkbox">
+                                            <label><input type="checkbox" class="up-to-you" data-field="inputs"> AI decision</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="outputs">Outputs:</label>
+                                    <div class="input-with-uty">
+                                        <textarea id="outputs" name="outputs" rows="3" placeholder="Describe expected outputs (e.g., data visualization, reports, notifications)"></textarea>
+                                        <div class="uty-checkbox">
+                                            <label><input type="checkbox" class="up-to-you" data-field="outputs"> AI decision</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="nav-buttons">
+                            <button type="button" class="prev-btn">Previous</button>
+                            <button type="button" class="next-btn">Next</button>
+                        </div>
+                    </section>
+
+                    <!-- Content & Data Management -->
+                    <section id="content-data" class="form-section">
+                        <div class="section-header">
+                            <h2>5. Content & Data Management</h2>
+                            <button type="button" class="skip-btn" data-section="content-data">Skip</button>
+                        </div>
+                        
+                        <div class="collapsible-section" id="authentication-security">
+                            <div class="collapsible-header">
+                                <h3>Authentication & Security</h3>
+                                <button type="button" class="toggle-btn" aria-label="Toggle section"></button>
+                            </div>
+                            <div class="collapsible-content">
+                                <div class="form-group">
+                                    <label>User Authentication:</label>
+                                    <div class="input-with-uty">
+                                        <div class="radio-group">
+                                            <label><input type="radio" name="auth" value="None"> None</label>
+                                            <label><input type="radio" name="auth" value="Email/Password"> Email/Password</label>
+                                            <label><input type="radio" name="auth" value="OAuth"> Social/OAuth</label>
+                                            <label><input type="radio" name="auth" value="SSO"> SSO</label>
+                                            <label><input type="radio" name="auth" value="Other"> Other</label>
+                                        </div>
+                                        <div class="uty-checkbox">
+                                            <label><input type="checkbox" class="up-to-you" data-field="auth"> AI decision</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>Security Level:</label>
+                                    <div class="input-with-uty">
+                                        <select id="security-level" name="security-level">
+                                            <option value="">Select security level</option>
+                                            <option value="Basic">Basic</option>
+                                            <option value="Medium">Medium</option>
+                                            <option value="High">High</option>
+                                            <option value="Enterprise">Enterprise-grade</option>
+                                        </select>
+                                        <div class="uty-checkbox">
+                                            <label><input type="checkbox" class="up-to-you" data-field="security-level"> AI decision</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="collapsible-section" id="data-ai">
+                            <div class="collapsible-header">
+                                <h3>Data Storage & AI</h3>
+                                <button type="button" class="toggle-btn" aria-label="Toggle section"></button>
+                            </div>
+                            <div class="collapsible-content">
+                                <div class="form-group">
+                                    <label for="data-storage">Data Storage & Privacy:</label>
+                                    <div class="input-with-uty">
+                                        <textarea id="data-storage" name="data-storage" rows="3"></textarea>
+                                        <div class="uty-checkbox">
+                                            <label><input type="checkbox" class="up-to-you" data-field="data-storage"> AI decision</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="ai-integration">AI Integration:</label>
+                                    <div class="input-with-uty">
+                                        <div class="checkbox-group">
+                                            <label><input type="checkbox" name="ai-features" value="NLP"> Natural Language Processing</label>
+                                            <label><input type="checkbox" name="ai-features" value="Computer Vision"> Computer Vision</label>
+                                            <label><input type="checkbox" name="ai-features" value="Recommendation"> Recommendation Systems</label>
+                                            <label><input type="checkbox" name="ai-features" value="Predictive"> Predictive Analytics</label>
+                                            <label><input type="checkbox" name="ai-features" value="Content Generation"> Content Generation</label>
+                                            <label><input type="checkbox" name="ai-features" value="None"> None</label>
+                                        </div>
+                                        <div class="uty-checkbox">
+                                            <label><input type="checkbox" class="up-to-you" data-field="ai-features"> AI decision</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="nav-buttons">
+                            <button type="button" class="prev-btn">Previous</button>
+                            <button type="button" class="next-btn">Next</button>
+                        </div>
+                    </section>
+
+                    <!-- Performance & Compatibility -->
+                    <section id="performance" class="form-section">
+                        <div class="section-header">
+                            <h2>6. Performance & Compatibility</h2>
+                            <button type="button" class="skip-btn" data-section="performance">Skip</button>
+                        </div>
+                        
+                        <div class="collapsible-section" id="performance-requirements">
+                            <div class="collapsible-header">
+                                <h3>Performance Requirements</h3>
+                                <button type="button" class="toggle-btn" aria-label="Toggle section"></button>
+                            </div>
+                            <div class="collapsible-content">
+                                <div class="form-group">
+                                    <label for="speed">Speed & Responsiveness:</label>
+                                    <div class="input-with-uty">
+                                        <textarea id="speed" name="speed" rows="2" placeholder="Performance requirements or expectations"></textarea>
+                                        <div class="uty-checkbox">
+                                            <label><input type="checkbox" class="up-to-you" data-field="speed"> AI decision</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="seo">SEO & Accessibility:</label>
+                                    <div class="input-with-uty">
+                                        <textarea id="seo" name="seo" rows="2" placeholder="SEO and accessibility requirements"></textarea>
+                                        <div class="uty-checkbox">
+                                            <label><input type="checkbox" class="up-to-you" data-field="seo"> AI decision</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="collapsible-section" id="compatibility">
+                            <div class="collapsible-header">
+                                <h3>Compatibility</h3>
+                                <button type="button" class="toggle-btn" aria-label="Toggle section"></button>
+                            </div>
+                            <div class="collapsible-content">
+                                <div class="form-group">
+                                    <label>Browser Compatibility:</label>
+                                    <div class="input-with-uty">
+                                        <div class="checkbox-group">
+                                            <label><input type="checkbox" name="browser" value="Chrome"> Chrome</label>
+                                            <label><input type="checkbox" name="browser" value="Firefox"> Firefox</label>
+                                            <label><input type="checkbox" name="browser" value="Safari"> Safari</label>
+                                            <label><input type="checkbox" name="browser" value="Edge"> Edge</label>
+                                            <label><input type="checkbox" name="browser" value="IE"> Internet Explorer</label>
+                                            <label><input type="checkbox" name="browser" value="Other"> Other</label>
+                                        </div>
+                                        <div class="uty-checkbox">
+                                            <label><input type="checkbox" class="up-to-you" data-field="browser"> AI decision</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="nav-buttons">
+                            <button type="button" class="prev-btn">Previous</button>
+                            <button type="button" class="next-btn">Next</button>
+                        </div>
+                    </section>
+
+                    <!-- Additional Features -->
+                    <section id="additional-features" class="form-section">
+                        <div class="section-header">
+                            <h2>7. Additional Features</h2>
+                            <button type="button" class="skip-btn" data-section="additional-features">Skip</button>
+                        </div>
+                        
+                        <div class="collapsible-section" id="feature-requests">
+                            <div class="collapsible-header">
+                                <h3>Feature Requests</h3>
+                                <button type="button" class="toggle-btn" aria-label="Toggle section"></button>
+                            </div>
+                            <div class="collapsible-content">
+                                <div class="form-group">
+                                    <label for="features">Features Requested:</label>
+                                    <div class="input-with-uty">
+                                        <textarea id="features" name="features" rows="4" placeholder="List any additional features or specific requirements"></textarea>
+                                        <div class="uty-checkbox">
+                                            <label><input type="checkbox" class="up-to-you" data-field="features"> AI decision</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="success-criteria">Success Criteria:</label>
+                                    <div class="input-with-uty">
+                                        <textarea id="success-criteria" name="success-criteria" rows="3" placeholder="How will you measure the success of this project? What goals should it achieve?"></textarea>
+                                        <div class="uty-checkbox">
+                                            <label><input type="checkbox" class="up-to-you" data-field="success-criteria"> AI decision</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="collapsible-section" id="inspirations-budget">
+                            <div class="collapsible-header">
+                                <h3>Inspirations & Budget</h3>
+                                <button type="button" class="toggle-btn" aria-label="Toggle section"></button>
+                            </div>
+                            <div class="collapsible-content">
+                                <div class="form-group">
+                                    <label for="existing-products">Similar Products & Inspiration:</label>
+                                    <div class="input-with-uty">
+                                        <textarea id="existing-products" name="existing-products" rows="3" placeholder="Any existing products, websites, or apps that are similar to what you want or that inspire you"></textarea>
+                                        <div class="uty-checkbox">
+                                            <label><input type="checkbox" class="up-to-you" data-field="existing-products"> AI decision</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="budget-constraints">Budget Constraints:</label>
+                                    <div class="input-with-uty">
+                                        <select id="budget-constraints" name="budget-constraints">
+                                            <option value="">Select budget range</option>
+                                            <option value="Low">Low (under $5,000)</option>
+                                            <option value="Medium">Medium ($5,000-$25,000)</option>
+                                            <option value="High">High ($25,000-$100,000)</option>
+                                            <option value="Enterprise">Enterprise (Over $100,000)</option>
+                                        </select>
+                                        <div class="uty-checkbox">
+                                            <label><input type="checkbox" class="up-to-you" data-field="budget-constraints"> AI decision</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="nav-buttons">
+                            <button type="button" class="prev-btn">Previous</button>
+                            <button type="button" id="review-btn" class="review-btn">Review</button>
+                        </div>
+                    </section>
+
+                    <!-- Review Section -->
+                    <section id="review-section" class="form-section">
+                        <div class="section-header">
+                            <h2>Review Your Project Brief</h2>
+                        </div>
+                        <div id="review-content">
+                            <!-- Content will be populated by JavaScript -->
+                        </div>
+                        <div class="nav-buttons">
+                            <button type="button" class="prev-btn">Previous</button>
+                            <button type="button" id="generate-pdf" class="generate-btn">Generate Brief</button>
+                        </div>
+                    </section>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 App Planner</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html> 
