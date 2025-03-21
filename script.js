@@ -1587,9 +1587,32 @@ document.addEventListener('DOMContentLoaded', function() {
         const fieldName = checkbox.getAttribute('data-field');
         const isChecked = checkbox.checked;
         
+        // Special case for color pickers which are grouped
+        if (fieldName === 'colors') {
+            const primaryColor = document.getElementById('primary-color');
+            const secondaryColor = document.getElementById('secondary-color');
+            const colorPickers = document.querySelector('.color-pickers');
+            
+            if (isChecked) {
+                primaryColor.classList.add('input-disabled');
+                secondaryColor.classList.add('input-disabled');
+                colorPickers.classList.add('input-disabled');
+                primaryColor.setAttribute('disabled', true);
+                secondaryColor.setAttribute('disabled', true);
+            } else {
+                primaryColor.classList.remove('input-disabled');
+                secondaryColor.classList.remove('input-disabled');
+                colorPickers.classList.remove('input-disabled');
+                primaryColor.removeAttribute('disabled');
+                secondaryColor.removeAttribute('disabled');
+            }
+            return;
+        }
+        
         // Find target input(s) by name
         const targetInputs = document.querySelectorAll(`[name="${fieldName}"]`);
         
+        // Standard field handling
         if (targetInputs.length > 0) {
             targetInputs.forEach(input => {
                 if (isChecked) {
