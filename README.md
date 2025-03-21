@@ -2,6 +2,10 @@
 
 A responsive web application designed to gather detailed user input to produce structured project brief documents for AI coding assistants or human developers.
 
+## Live Demo
+
+**[Check out the live application here](https://lovejzzz.github.io/AppPlanner/)**
+
 ## Features
 
 - Multi-step form with intuitive navigation
@@ -25,6 +29,8 @@ The application follows a structured approach to collect information in seven ke
 ## Installation
 
 No installation necessary! This is a pure HTML/CSS/JavaScript application.
+
+You can directly access the application through the [live demo](https://lovejzzz.github.io/AppPlanner/) without any installation.
 
 ### Running Locally
 
