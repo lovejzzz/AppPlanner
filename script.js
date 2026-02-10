@@ -54,22 +54,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ===== Question Engine =====
+    // All questions are chip-based. Questions with customOption: true show a
+    // "Type my own" chip that reveals a text input inline.
     const QUESTIONS = [
         {
             id: 'platform',
             question: 'What kind of app is this?',
             type: 'chips',
             options: ['Web App', 'Mobile App', 'Desktop App', 'API / Backend', 'Chrome Extension', 'HTML + CSS + JS'],
-            suggestion: 'Pick the primary platform. You can note secondary ones later.',
+            suggestion: 'Pick the primary platform.',
             specSection: 'Platform',
-            specRender: v => `<span class="spec-tag spec-tag-accent">${v}</span>`
+            specRender: v => `<span class="spec-tag spec-tag-accent">${escapeHtml(v)}</span>`
         },
         {
             id: 'audience',
             question: 'Who is this for?',
-            type: 'text',
-            placeholder: 'e.g. indie developers, busy parents, small business owners...',
-            suggestion: 'Be specific. "Everyone" is too broad for a good prompt.',
+            type: 'chips',
+            options: ['Everyone', 'Kids / Teens', 'Students', 'Developers', 'Professionals', 'Small Business Owners', 'Creators / Artists'],
+            customOption: true,
+            customPlaceholder: 'e.g. busy parents, fitness enthusiasts...',
+            suggestion: 'Be specific — it helps the AI tailor the UX.',
             specSection: 'Target Audience',
             specRender: v => escapeHtml(v)
         },
@@ -78,8 +82,10 @@ document.addEventListener('DOMContentLoaded', () => {
             question: 'What\'s the design vibe?',
             type: 'chips',
             options: ['Minimal & Clean', 'Playful & Colorful', 'Dark & Techy', 'Corporate & Professional', 'Retro / Nostalgic'],
+            customOption: true,
+            customPlaceholder: 'e.g. cozy & warm, futuristic, hand-drawn...',
             specSection: 'Design',
-            specRender: v => `<span class="spec-tag spec-tag-green">${v}</span>`
+            specRender: v => `<span class="spec-tag spec-tag-green">${escapeHtml(v)}</span>`
         },
         {
             id: 'features',
@@ -87,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
             type: 'chips',
             multi: true,
             options: ['User Accounts', 'Dashboard', 'Payments / Billing', 'Social Features', 'Search', 'Notifications', 'File Upload', 'Chat / Messaging', 'Analytics', 'Admin Panel', 'AI Integration', 'Animations'],
-            suggestion: 'Select the ones that matter most. You can add custom ones next.',
+            suggestion: 'Select the ones that matter most.',
             specSection: 'Core Features',
             specRender: v => {
                 const items = Array.isArray(v) ? v : [v];
@@ -96,12 +102,18 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'features_custom',
-            question: 'Any other features specific to your app?',
-            type: 'text',
-            placeholder: 'e.g. recipe import from URL, calorie tracking, meal plan generator...',
-            suggestion: 'Describe features unique to your idea. Skip if covered above.',
+            question: 'Any app-specific features?',
+            type: 'chips',
+            options: ['Maps / Location', 'Camera / Photo', 'Calendar / Scheduling', 'Reviews / Ratings', 'Sharing / Invites', 'Import / Export Data', 'Gamification / Points', 'Dark Mode'],
+            multi: true,
+            customOption: true,
+            customPlaceholder: 'e.g. recipe import from URL, meal plan generator...',
+            suggestion: 'Pick relevant ones or type your own. Skip if covered above.',
             specSection: 'Custom Features',
-            specRender: v => escapeHtml(v)
+            specRender: v => {
+                if (Array.isArray(v)) return '<ul>' + v.map(i => `<li>${escapeHtml(i)}</li>`).join('') + '</ul>';
+                return escapeHtml(v);
+            }
         },
         {
             id: 'auth',
@@ -109,25 +121,33 @@ document.addEventListener('DOMContentLoaded', () => {
             type: 'chips',
             options: ['Email & Password', 'Google / Social Login', 'Magic Link', 'No Auth Needed'],
             specSection: 'Authentication',
-            specRender: v => `<span class="spec-tag spec-tag-accent">${v}</span>`
+            specRender: v => `<span class="spec-tag spec-tag-accent">${escapeHtml(v)}</span>`
         },
         {
             id: 'stack',
             question: 'Any tech stack preference?',
             type: 'chips',
             options: ['React + Node', 'Next.js + Supabase', 'Vue + Firebase', 'Python + Django', 'Swift / Kotlin Native', 'HTML + CSS + JS', 'Let AI Decide'],
-            suggestion: 'If you\'re not sure, "Let AI Decide" is a great choice.',
+            customOption: true,
+            customPlaceholder: 'e.g. SvelteKit + PocketBase, Rails, Go...',
+            suggestion: 'If unsure, "Let AI Decide" is great.',
             specSection: 'Tech Stack',
-            specRender: v => `<span class="spec-tag spec-tag-orange">${v}</span>`
+            specRender: v => `<span class="spec-tag spec-tag-orange">${escapeHtml(v)}</span>`
         },
         {
             id: 'data',
             question: 'What data does the app manage?',
-            type: 'text',
-            placeholder: 'e.g. user profiles, workout logs, recipes, transactions...',
-            suggestion: 'List the main types of data users will create or view.',
+            type: 'chips',
+            options: ['User Profiles', 'Posts / Content', 'Products / Inventory', 'Messages / Chats', 'Files / Media', 'Transactions / Orders', 'Events / Schedules', 'No Data / Minimal'],
+            multi: true,
+            customOption: true,
+            customPlaceholder: 'e.g. workout logs, recipes, sensor data...',
+            suggestion: 'Pick the main data types users will create or view.',
             specSection: 'Data Model',
-            specRender: v => escapeHtml(v)
+            specRender: v => {
+                if (Array.isArray(v)) return v.map(i => `<span class="spec-tag spec-tag-accent">${escapeHtml(i)}</span>`).join(' ');
+                return escapeHtml(v);
+            }
         },
         {
             id: 'scope',
@@ -135,16 +155,22 @@ document.addEventListener('DOMContentLoaded', () => {
             type: 'chips',
             options: ['Quick Prototype (1-2 days)', 'MVP (1-2 weeks)', 'Full Product (1-3 months)', 'Just Exploring'],
             specSection: 'Scope',
-            specRender: v => `<span class="spec-tag spec-tag-green">${v}</span>`
+            specRender: v => `<span class="spec-tag spec-tag-green">${escapeHtml(v)}</span>`
         },
         {
             id: 'extras',
             question: 'Anything else the AI should know?',
-            type: 'text',
-            placeholder: 'e.g. must work offline, needs dark mode, should look like Linear...',
-            suggestion: 'Final details, inspirations, or constraints. Skip if nothing comes to mind.',
+            type: 'chips',
+            options: ['Must Work Offline', 'Needs Dark Mode', 'Accessibility Focus', 'Multi-language / i18n', 'Beautiful Animations', 'Fast & Lightweight', 'SEO Friendly'],
+            multi: true,
+            customOption: true,
+            customPlaceholder: 'e.g. should look like Linear, needs to handle 10k users...',
+            suggestion: 'Pick constraints or type your own.',
             specSection: 'Additional Notes',
-            specRender: v => escapeHtml(v)
+            specRender: v => {
+                if (Array.isArray(v)) return v.map(i => `<span class="spec-tag spec-tag-green">${escapeHtml(i)}</span>`).join(' ');
+                return escapeHtml(v);
+            }
         }
     ];
 
@@ -401,163 +427,216 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderInput(q) {
         convInputArea.innerHTML = '';
         const recommendation = getRecommendation(q.id);
+        const wrapper = document.createElement('div');
 
-        if (q.type === 'chips') {
-            const wrapper = document.createElement('div');
+        // All questions are now chip-based
+        const chipsDiv = document.createElement('div');
+        chipsDiv.className = 'input-chips';
 
-            if (q.multi) {
-                // Multi-select chips
-                const chipsDiv = document.createElement('div');
-                chipsDiv.className = 'input-chips';
-                const selected = new Set();
+        if (q.multi) {
+            // ---- Multi-select ----
+            const selected = new Set();
+            let customText = '';
 
-                q.options.forEach((opt, idx) => {
-                    const chip = document.createElement('button');
-                    chip.className = 'chip';
-                    chip.textContent = opt;
-                    chip.setAttribute('data-key', idx + 1 <= 9 ? idx + 1 : '');
-                    chip.addEventListener('click', () => {
-                        if (selected.has(opt)) {
-                            selected.delete(opt);
-                            chip.classList.remove('selected');
-                        } else {
-                            selected.add(opt);
-                            chip.classList.add('selected');
-                        }
-                        confirmBtn.disabled = selected.size === 0;
-                    });
-                    chipsDiv.appendChild(chip);
+            q.options.forEach((opt, idx) => {
+                const chip = document.createElement('button');
+                chip.className = 'chip';
+                chip.textContent = opt;
+                chip.setAttribute('data-key', idx + 1 <= 9 ? idx + 1 : '');
+                chip.addEventListener('click', () => {
+                    if (selected.has(opt)) {
+                        selected.delete(opt);
+                        chip.classList.remove('selected');
+                    } else {
+                        selected.add(opt);
+                        chip.classList.add('selected');
+                    }
+                    updateConfirmState();
                 });
+                chipsDiv.appendChild(chip);
+            });
 
-                // Skip chip
-                const skipChip = document.createElement('button');
-                skipChip.className = 'chip chip-skip';
-                skipChip.textContent = 'Skip';
-                skipChip.addEventListener('click', () => handleSkip(q));
-                chipsDiv.appendChild(skipChip);
-
-                wrapper.appendChild(chipsDiv);
-
-                // Confirm button
-                const controls = document.createElement('div');
-                controls.className = 'multi-controls';
-                const confirmBtn = document.createElement('button');
-                confirmBtn.className = 'btn-confirm';
-                confirmBtn.textContent = 'Confirm selection';
-                confirmBtn.disabled = true;
-                confirmBtn.addEventListener('click', () => {
-                    handleAnswer(q, Array.from(selected));
+            // "Type my own" chip for custom input
+            if (q.customOption) {
+                const customChip = document.createElement('button');
+                customChip.className = 'chip chip-custom';
+                customChip.textContent = 'Type my own';
+                customChip.addEventListener('click', () => {
+                    customRow.classList.toggle('hidden');
+                    if (!customRow.classList.contains('hidden')) {
+                        customInput.focus();
+                    }
                 });
-                controls.appendChild(confirmBtn);
-                wrapper.appendChild(controls);
-
-                // Keyboard handler for multi
-                wrapper._keyHandler = e => {
-                    if (e.key === 'Enter' && selected.size > 0) {
-                        handleAnswer(q, Array.from(selected));
-                    }
-                    const num = parseInt(e.key);
-                    if (num >= 1 && num <= q.options.length) {
-                        const opt = q.options[num - 1];
-                        const chip = chipsDiv.children[num - 1];
-                        if (selected.has(opt)) {
-                            selected.delete(opt);
-                            chip.classList.remove('selected');
-                        } else {
-                            selected.add(opt);
-                            chip.classList.add('selected');
-                        }
-                        confirmBtn.disabled = selected.size === 0;
-                    }
-                };
-                document.addEventListener('keydown', wrapper._keyHandler);
-            } else {
-                // Single-select chips
-                const chipsDiv = document.createElement('div');
-                chipsDiv.className = 'input-chips';
-
-                q.options.forEach((opt, idx) => {
-                    const chip = document.createElement('button');
-                    chip.className = 'chip';
-                    if (recommendation && opt === recommendation) {
-                        chip.classList.add('recommended');
-                    }
-                    chip.textContent = opt;
-                    chip.setAttribute('data-key', idx + 1 <= 9 ? idx + 1 : '');
-                    chip.addEventListener('click', () => handleAnswer(q, opt));
-                    chipsDiv.appendChild(chip);
-                });
-
-                // Skip chip
-                const skipChip = document.createElement('button');
-                skipChip.className = 'chip chip-skip';
-                skipChip.textContent = 'Skip';
-                skipChip.addEventListener('click', () => handleSkip(q));
-                chipsDiv.appendChild(skipChip);
-
-                wrapper.appendChild(chipsDiv);
-
-                // Keyboard handler for single
-                wrapper._keyHandler = e => {
-                    const num = parseInt(e.key);
-                    if (num >= 1 && num <= q.options.length) {
-                        handleAnswer(q, q.options[num - 1]);
-                    }
-                };
-                document.addEventListener('keydown', wrapper._keyHandler);
+                chipsDiv.appendChild(customChip);
             }
 
-            // Suggestion with recommendation callout
-            const hint = document.createElement('div');
-            hint.className = 'input-suggestion';
-            let hintText = '';
-            if (recommendation && !q.multi) {
-                hintText = `Based on your idea, <strong>${recommendation}</strong> might be a good fit. `;
+            // Skip chip
+            const skipChip = document.createElement('button');
+            skipChip.className = 'chip chip-skip';
+            skipChip.textContent = 'Skip';
+            skipChip.addEventListener('click', () => handleSkip(q));
+            chipsDiv.appendChild(skipChip);
+
+            wrapper.appendChild(chipsDiv);
+
+            // Custom text input row (hidden by default)
+            let customInput;
+            const customRow = document.createElement('div');
+            customRow.className = 'custom-input-row hidden';
+            if (q.customOption) {
+                customInput = document.createElement('input');
+                customInput.type = 'text';
+                customInput.placeholder = q.customPlaceholder || 'Type your own...';
+                customInput.className = 'custom-text-input';
+                customInput.addEventListener('input', () => {
+                    customText = customInput.value.trim();
+                    updateConfirmState();
+                });
+                customInput.addEventListener('keydown', e => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        submitMulti();
+                    }
+                });
+                customRow.appendChild(customInput);
+                wrapper.appendChild(customRow);
             }
-            if (q.suggestion) hintText += q.suggestion;
-            hintText += ' <span class="kbd-hint">Press 1-9 to quick-pick.</span>';
-            hint.innerHTML = hintText;
-            wrapper.appendChild(hint);
 
-            convInputArea.appendChild(wrapper);
-        } else if (q.type === 'text') {
-            const wrapper = document.createElement('div');
+            // Confirm button
+            const controls = document.createElement('div');
+            controls.className = 'multi-controls';
+            const confirmBtn = document.createElement('button');
+            confirmBtn.className = 'btn-confirm';
+            confirmBtn.textContent = 'Confirm selection';
+            confirmBtn.disabled = true;
 
-            const inputRow = document.createElement('div');
-            inputRow.className = 'conv-text-input';
+            function updateConfirmState() {
+                confirmBtn.disabled = selected.size === 0 && !customText;
+            }
 
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.placeholder = q.placeholder || 'Type your answer...';
-            input.addEventListener('keydown', e => {
-                if (e.key === 'Enter' && input.value.trim()) {
-                    handleAnswer(q, input.value.trim());
+            function submitMulti() {
+                const result = Array.from(selected);
+                if (customText) {
+                    // Split by commas to allow multiple custom entries
+                    customText.split(',').map(s => s.trim()).filter(Boolean).forEach(s => result.push(s));
                 }
-            });
-
-            const sendBtn = document.createElement('button');
-            sendBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>';
-            sendBtn.addEventListener('click', () => {
-                if (input.value.trim()) handleAnswer(q, input.value.trim());
-            });
-
-            inputRow.appendChild(input);
-            inputRow.appendChild(sendBtn);
-            wrapper.appendChild(inputRow);
-
-            // Skip link
-            const skipRow = document.createElement('div');
-            skipRow.className = 'input-suggestion';
-            skipRow.innerHTML = `<button class="chip chip-skip" style="font-size:0.78rem;padding:0.25rem 0.65rem;margin-top:0.25rem">Skip</button>`;
-            skipRow.querySelector('button').addEventListener('click', () => handleSkip(q));
-            if (q.suggestion) {
-                skipRow.innerHTML += ` &middot; ${q.suggestion}`;
+                if (result.length > 0) handleAnswer(q, result);
             }
-            wrapper.appendChild(skipRow);
 
-            convInputArea.appendChild(wrapper);
-            input.focus();
+            confirmBtn.addEventListener('click', submitMulti);
+            controls.appendChild(confirmBtn);
+            wrapper.appendChild(controls);
+
+            // Keyboard handler
+            wrapper._keyHandler = e => {
+                // Don't capture keys when typing in custom input
+                if (document.activeElement === customInput) return;
+                if (e.key === 'Enter' && (selected.size > 0 || customText)) {
+                    submitMulti();
+                }
+                const num = parseInt(e.key);
+                if (num >= 1 && num <= q.options.length) {
+                    const opt = q.options[num - 1];
+                    const chip = chipsDiv.children[num - 1];
+                    if (selected.has(opt)) {
+                        selected.delete(opt);
+                        chip.classList.remove('selected');
+                    } else {
+                        selected.add(opt);
+                        chip.classList.add('selected');
+                    }
+                    updateConfirmState();
+                }
+            };
+            document.addEventListener('keydown', wrapper._keyHandler);
+
+        } else {
+            // ---- Single-select ----
+            q.options.forEach((opt, idx) => {
+                const chip = document.createElement('button');
+                chip.className = 'chip';
+                if (recommendation && opt === recommendation) {
+                    chip.classList.add('recommended');
+                }
+                chip.textContent = opt;
+                chip.setAttribute('data-key', idx + 1 <= 9 ? idx + 1 : '');
+                chip.addEventListener('click', () => handleAnswer(q, opt));
+                chipsDiv.appendChild(chip);
+            });
+
+            // "Type my own" chip
+            let customInput;
+            if (q.customOption) {
+                const customChip = document.createElement('button');
+                customChip.className = 'chip chip-custom';
+                customChip.textContent = 'Type my own';
+                customChip.addEventListener('click', () => {
+                    customRow.classList.toggle('hidden');
+                    if (!customRow.classList.contains('hidden')) {
+                        customInput.focus();
+                    }
+                });
+                chipsDiv.appendChild(customChip);
+            }
+
+            // Skip chip
+            const skipChip = document.createElement('button');
+            skipChip.className = 'chip chip-skip';
+            skipChip.textContent = 'Skip';
+            skipChip.addEventListener('click', () => handleSkip(q));
+            chipsDiv.appendChild(skipChip);
+
+            wrapper.appendChild(chipsDiv);
+
+            // Custom text row for single-select
+            const customRow = document.createElement('div');
+            customRow.className = 'custom-input-row hidden';
+            if (q.customOption) {
+                const inputRow = document.createElement('div');
+                inputRow.className = 'conv-text-input';
+                customInput = document.createElement('input');
+                customInput.type = 'text';
+                customInput.placeholder = q.customPlaceholder || 'Type your own...';
+                customInput.addEventListener('keydown', e => {
+                    if (e.key === 'Enter' && customInput.value.trim()) {
+                        handleAnswer(q, customInput.value.trim());
+                    }
+                });
+                const sendBtn = document.createElement('button');
+                sendBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>';
+                sendBtn.addEventListener('click', () => {
+                    if (customInput.value.trim()) handleAnswer(q, customInput.value.trim());
+                });
+                inputRow.appendChild(customInput);
+                inputRow.appendChild(sendBtn);
+                customRow.appendChild(inputRow);
+                wrapper.appendChild(customRow);
+            }
+
+            // Keyboard handler
+            wrapper._keyHandler = e => {
+                if (document.activeElement === customInput) return;
+                const num = parseInt(e.key);
+                if (num >= 1 && num <= q.options.length) {
+                    handleAnswer(q, q.options[num - 1]);
+                }
+            };
+            document.addEventListener('keydown', wrapper._keyHandler);
         }
+
+        // Hint row
+        const hint = document.createElement('div');
+        hint.className = 'input-suggestion';
+        let hintText = '';
+        if (recommendation && !q.multi) {
+            hintText = `Based on your idea, <strong>${recommendation}</strong> might be a good fit. `;
+        }
+        if (q.suggestion) hintText += q.suggestion;
+        hintText += ' <span class="kbd-hint">Press 1-9 to quick-pick.</span>';
+        hint.innerHTML = hintText;
+        wrapper.appendChild(hint);
+
+        convInputArea.appendChild(wrapper);
     }
 
     // ===== Cleanup keyboard handlers =====
