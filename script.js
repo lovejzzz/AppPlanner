@@ -661,124 +661,179 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ===== Prompt Generators =====
+
+    // Infer a sensible stack when user picked "Let AI Decide" or skipped
+    function inferStack() {
+        const s = state.answers;
+        const features = Array.isArray(s.features) ? s.features : [];
+        const hasChat = features.includes('Chat / Messaging');
+        const hasPayments = features.includes('Payments / Billing');
+        const hasAI = features.includes('AI Integration');
+        const hasAnalytics = features.includes('Analytics');
+        const platform = s.platform || '';
+
+        if (platform === 'HTML + CSS + JS') return 'HTML + CSS + JS (vanilla, no build tools)';
+        if (platform === 'Mobile App') return 'React Native with Expo + Supabase';
+        if (hasChat || hasPayments || hasAI || hasAnalytics) return 'Next.js + Supabase + Tailwind CSS';
+        if (features.includes('Social Features')) return 'Next.js + Supabase + Tailwind CSS';
+        if (platform === 'Chrome Extension') return 'Vanilla JS/HTML extension with Chrome APIs';
+        return 'Next.js + Tailwind CSS';
+    }
+
+    function getIdeaSummary() {
+        const s = state.answers;
+        const parts = [];
+        parts.push(state.idea);
+        if (state.ideaElaborated && state.ideaElaborated !== state.idea) {
+            parts.push(state.ideaElaborated);
+        }
+        return parts.join(' — ');
+    }
+
+    // Build a natural-language summary paragraph from the answers
+    function buildSummary() {
+        const s = state.answers;
+        const idea = getIdeaSummary();
+        const platform = s.platform || 'web application';
+        const audience = s.audience || null;
+        const vibe = s.vibe || null;
+        const features = Array.isArray(s.features) ? s.features : [];
+        const custom = s.features_custom || null;
+        const auth = s.auth || null;
+
+        let summary = `Build a ${platform.toLowerCase()}`;
+        summary += `: ${idea}.`;
+
+        if (audience) summary += ` Target users: ${audience}.`;
+        if (vibe) summary += ` The design should feel ${vibe.toLowerCase()}.`;
+        if (features.length > 0) summary += ` Core features include: ${features.join(', ').toLowerCase()}.`;
+        if (custom) summary += ` Also: ${custom}.`;
+        if (auth && auth !== 'No Auth Needed') summary += ` Authentication via ${auth.toLowerCase()}.`;
+        if (auth === 'No Auth Needed') summary += ` No authentication needed.`;
+
+        return summary;
+    }
+
     function buildSpec() {
         const s = state.answers;
         const lines = [];
-        const ideaFull = state.ideaElaborated
-            ? `${state.idea} — ${state.ideaElaborated}`
-            : state.idea;
-        lines.push(`## App Idea\n${ideaFull}\n`);
+        lines.push(`## App Idea\n${getIdeaSummary()}\n`);
 
         QUESTIONS.forEach(q => {
             const val = s[q.id];
             if (val === null || val === undefined) {
-                lines.push(`## ${q.specSection}\nUse your best judgment.\n`);
-            } else {
-                const display = Array.isArray(val) ? val.join(', ') : val;
-                lines.push(`## ${q.specSection}\n${display}\n`);
+                // Don't output "use your best judgment" for every empty field
+                // Only include sections that have real answers
+                return;
             }
+            const display = Array.isArray(val) ? val.join(', ') : val;
+            lines.push(`## ${q.specSection}\n${display}\n`);
         });
+
+        // Add inferred stack if user skipped it
+        if (!s.stack || s.stack === 'Let AI Decide') {
+            lines.push(`## Suggested Tech Stack\n${inferStack()} (choose the best fit if you disagree)\n`);
+        }
 
         return lines.join('\n');
     }
 
     function generatePrompt(target) {
+        const s = state.answers;
         const spec = buildSpec();
-        const ideaFull = state.ideaElaborated
-            ? `${state.idea}: ${state.ideaElaborated}`
-            : state.idea;
+        const summary = buildSummary();
+        const stack = (s.stack && s.stack !== 'Let AI Decide') ? s.stack : inferStack();
+        const scope = s.scope || 'MVP';
+        const isExploring = scope.includes('Exploring');
+        const isPrototype = scope.includes('Prototype');
 
         if (target === 'claude') {
-            const s = state.answers;
-            let prompt = `I want you to build the following application:\n\n`;
-            prompt += `**${ideaFull}**\n\n`;
+            let prompt = `${summary}\n\n`;
+            prompt += `---\n\n`;
             prompt += spec + '\n';
             prompt += `## Build Instructions\n`;
 
-            // Tailor instructions based on answers
-            if (s.stack === 'HTML + CSS + JS' || s.platform === 'HTML + CSS + JS') {
-                prompt += `- Build this as a single-page HTML/CSS/JS application (no build tools needed)\n`;
-                prompt += `- Make it work by simply opening the HTML file in a browser\n`;
+            // Adapt to scope
+            if (isExploring || isPrototype) {
+                prompt += `- This is a ${isExploring ? 'exploration / proof of concept' : 'quick prototype'}. Focus on getting a working demo fast, skip perfectionism\n`;
+                prompt += `- Use ${stack}. Keep the architecture simple — no over-engineering\n`;
+                prompt += `- Get something visible and interactive as quickly as possible\n`;
+            } else if (s.platform === 'HTML + CSS + JS' || stack.includes('vanilla')) {
+                prompt += `- Build this as a single HTML/CSS/JS file (no build tools, no frameworks)\n`;
+                prompt += `- It should work by opening the HTML file directly in a browser\n`;
             } else if (s.platform === 'Mobile App') {
-                prompt += `- Start with the data models and core logic\n`;
-                prompt += `- Then build the screens and navigation\n`;
+                prompt += `- Use ${stack}\n`;
+                prompt += `- Start with the data models and core logic, then build screens and navigation\n`;
             } else {
-                prompt += `- Start by designing the database schema, then build the backend API, then the frontend UI\n`;
+                prompt += `- Use ${stack}\n`;
+                prompt += `- Start with the database schema, then the API layer, then the frontend\n`;
             }
 
             if (s.vibe) {
-                prompt += `- Design style: ${s.vibe}. Make the UI match this vibe throughout\n`;
+                prompt += `- Design: ${s.vibe} aesthetic. Every screen should match this vibe\n`;
             }
-            prompt += `- Use clean, modern patterns and write production-quality code\n`;
-            prompt += `- Build step by step, explaining key decisions as you go\n`;
 
-            if (state.ideaElaborated) {
-                prompt += `\n## Key Detail\n${state.ideaElaborated}\n`;
+            if (s.extras) {
+                prompt += `- Important: ${s.extras}\n`;
             }
+
+            prompt += `- Write clean, modern code. Explain key decisions as you build\n`;
 
             return prompt;
         }
 
         if (target === 'cursor') {
-            let prompt = `Build this application from scratch:\n\n**${ideaFull}**\n\n${spec}\n`;
+            let prompt = `${summary}\n\n`;
+            prompt += `---\n\n`;
+            prompt += spec + '\n';
             prompt += `## Requirements\n`;
-            prompt += `- Set up the project with a clean folder structure\n`;
-            prompt += `- Implement all features listed in the spec\n`;
+            prompt += `- Tech stack: ${stack}\n`;
+            prompt += `- Set up proper project structure from the start\n`;
 
-            const s = state.answers;
-            if (s.stack && s.stack !== 'Let AI Decide') {
-                prompt += `- Use the ${s.stack} stack as specified\n`;
+            if (isExploring || isPrototype) {
+                prompt += `- This is a ${isExploring ? 'proof of concept' : 'prototype'} — prioritize speed over polish\n`;
             } else {
-                prompt += `- Choose the best tech stack for this use case\n`;
+                prompt += `- Write production-quality, well-organized code\n`;
+                prompt += `- Use TypeScript where possible\n`;
+                prompt += `- Include proper error handling and input validation\n`;
             }
-            prompt += `- Use TypeScript where possible\n`;
-            prompt += `- Include proper error handling and input validation\n`;
-            prompt += `- Make the UI responsive and accessible\n`;
-            prompt += `- Write clean, well-organized, production-ready code\n`;
 
-            if (s.vibe) {
-                prompt += `- Design: ${s.vibe} aesthetic throughout\n`;
-            }
-            if (s.scope) {
-                prompt += `- Scope: ${s.scope}\n`;
-            }
+            prompt += `- Make the UI responsive and accessible\n`;
+
+            if (s.vibe) prompt += `- Design: ${s.vibe} aesthetic throughout\n`;
+            if (s.extras) prompt += `- Note: ${s.extras}\n`;
 
             return prompt;
         }
 
         if (target === 'v0') {
-            const s = state.answers;
             const vibe = s.vibe || 'clean and modern';
-            const features = s.features;
-            const featureStr = features ? (Array.isArray(features) ? features.join(', ') : features) : '';
-            let prompt = `Create a ${vibe} UI for: ${ideaFull}\n\n`;
+            const features = Array.isArray(s.features) ? s.features : [];
 
-            if (featureStr) {
-                prompt += `Key features to include in the interface:\n`;
-                const items = Array.isArray(features) ? features : [features];
-                items.forEach(f => { prompt += `- ${f}\n`; });
+            let prompt = `Create a ${vibe.toLowerCase()} UI for: ${getIdeaSummary()}\n\n`;
+
+            if (features.length > 0) {
+                prompt += `Key screens/features to design:\n`;
+                features.forEach(f => { prompt += `- ${f}\n`; });
             }
 
-            if (s.features_custom) {
-                prompt += `\nAdditional features: ${s.features_custom}\n`;
-            }
+            if (s.features_custom) prompt += `- ${s.features_custom}\n`;
 
-            prompt += `\nDesign requirements:\n`;
+            prompt += `\nDesign:\n`;
             prompt += `- ${vibe} aesthetic\n`;
-            prompt += `- Responsive layout (mobile + desktop)\n`;
-            prompt += `- Polished, production-ready feel\n`;
+            prompt += `- Responsive (mobile + desktop)\n`;
             prompt += `- Use shadcn/ui components\n`;
-            prompt += `- Include realistic placeholder content\n`;
+            prompt += `- Include realistic placeholder content and data\n`;
 
-            if (s.auth && s.auth !== 'No Auth Needed') {
-                prompt += `- Include a sign-in flow (${s.auth})\n`;
-            }
+            if (s.audience) prompt += `- Optimized for: ${s.audience}\n`;
+            if (s.auth && s.auth !== 'No Auth Needed') prompt += `- Include sign-in flow (${s.auth})\n`;
+            if (s.extras) prompt += `- ${s.extras}\n`;
 
             return prompt;
         }
 
-        // markdown
-        return spec;
+        // markdown — clean spec only
+        return `# ${state.idea}\n\n${summary}\n\n---\n\n${spec}`;
     }
 
     // Export buttons
