@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,8 +14,18 @@
 </head>
 <body>
     <header>
-        <h1>App Planner</h1>
-        <p class="subtitle">Organize your idea for your next app</p>
+        <div class="header-content">
+            <div class="header-left">
+                <h1>App Planner</h1>
+                <p class="subtitle">Plan your app. Prompt your AI.</p>
+            </div>
+            <div class="header-right">
+                <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+                    <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                    <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                </button>
+            </div>
+        </div>
     </header>
 
     <main>
@@ -33,37 +43,80 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="welcome-card">
+                <div class="welcome-badge">Plan &rarr; Prompt &rarr; Build</div>
                 <div class="project-name-input">
                     <label for="project-name-start">Project Name</label>
                     <input type="text" id="project-name-start" name="project-name-start" placeholder="My Awesome App" required>
                     <div class="validation-message"></div>
                 </div>
-                
+
                 <button class="start-planning-btn">Start Planning</button>
+
+                <div class="templates-section">
+                    <p class="templates-label">Or start from a template:</p>
+                    <div class="template-cards">
+                        <button class="template-card" data-template="saas">
+                            <span class="template-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                            </span>
+                            <span class="template-name">SaaS App</span>
+                        </button>
+                        <button class="template-card" data-template="mobile">
+                            <span class="template-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+                            </span>
+                            <span class="template-name">Mobile App</span>
+                        </button>
+                        <button class="template-card" data-template="ecommerce">
+                            <span class="template-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+                            </span>
+                            <span class="template-name">E-commerce</span>
+                        </button>
+                        <button class="template-card" data-template="portfolio">
+                            <span class="template-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+                            </span>
+                            <span class="template-name">Portfolio</span>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
-        
+
         <!-- Main planner (hidden initially) -->
         <div id="planner-content" class="planner-content hidden">
             <aside class="navigation">
                 <nav>
                     <ul>
                         <li><a href="#project-overview" class="nav-link active">1. Project Overview</a></li>
-                        <li><a href="#platform-tech" class="nav-link">2. Platform & Technical Requirements</a></li>
+                        <li><a href="#platform-tech" class="nav-link">2. Platform & Technical</a></li>
                         <li><a href="#design-visuals" class="nav-link">3. Design & Visuals</a></li>
-                        <li><a href="#user-interaction" class="nav-link">4. User Interaction & Experience</a></li>
-                        <li><a href="#content-data" class="nav-link">5. Content & Data Management</a></li>
-                        <li><a href="#performance" class="nav-link">6. Performance & Compatibility</a></li>
-                        <li><a href="#additional-features" class="nav-link">7. Additional Features</a></li>
+                        <li><a href="#user-interaction" class="nav-link">4. User Interaction</a></li>
+                        <li><a href="#content-data" class="nav-link">5. Content & Data</a></li>
+                        <li><a href="#performance" class="nav-link">6. Performance</a></li>
+                        <li><a href="#additional-features" class="nav-link">7. Features</a></li>
                         <li><a href="#review-section" class="nav-link">8. Review</a></li>
                     </ul>
                 </nav>
+                <div class="nav-footer">
+                    <button type="button" class="skip-all-btn" id="skip-all-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 19 22 12 13 5 13 19"></polygon><polygon points="2 19 11 12 2 5 2 19"></polygon></svg>
+                        Let AI Decide All
+                    </button>
+                    <div class="keyboard-hint">
+                        <kbd>&larr;</kbd> <kbd>&rarr;</kbd> to navigate
+                    </div>
+                </div>
             </aside>
 
             <div class="form-container">
                 <div class="progress-bar-container">
+                    <div class="progress-track">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
                     <div class="progress-steps">
                         <div class="progress-step active" data-step="1">1</div>
                         <div class="progress-step" data-step="2">2</div>
@@ -80,12 +133,13 @@
                         <span class="progress-label">Design</span>
                         <span class="progress-label">UX</span>
                         <span class="progress-label">Data</span>
-                        <span class="progress-label">Performance</span>
+                        <span class="progress-label">Perf</span>
                         <span class="progress-label">Features</span>
                         <span class="progress-label">Review</span>
                     </div>
+                    <div class="progress-percentage" id="progress-percentage">0% complete</div>
                 </div>
-                
+
                 <form id="brief-form">
                     <!-- Project Overview -->
                     <section id="project-overview" class="form-section active">
@@ -104,7 +158,7 @@
                             </div>
                             <div class="validation-message"></div>
                         </div>
-                        
+
                         <div class="collapsible-section" id="project-basics">
                             <div class="collapsible-header">
                                 <h3>Project Basics</h3>
@@ -121,7 +175,7 @@
                                     </div>
                                     <div class="validation-message"></div>
                                 </div>
-                                
+
                                 <div class="form-group">
                                     <label for="project-description">Description:</label>
                                     <div class="input-with-uty">
@@ -134,7 +188,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="collapsible-section" id="audience-scope">
                             <div class="collapsible-header">
                                 <h3>Target Audience & Scope</h3>
@@ -150,7 +204,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="form-group">
                                     <label for="project-scope">Project Scope:</label>
                                     <div class="input-with-uty">
@@ -168,7 +222,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="nav-buttons">
                             <button type="button" class="next-btn">Next</button>
                         </div>
@@ -180,7 +234,7 @@
                             <h2>2. Platform & Technical Requirements</h2>
                             <button type="button" class="skip-btn" data-section="platform-tech">Skip</button>
                         </div>
-                        
+
                         <!-- Basic Platform Info -->
                         <div class="form-group">
                             <label for="app-type">Application Type:</label>
@@ -199,7 +253,7 @@
                             </div>
                             <div class="validation-message"></div>
                         </div>
-                        
+
                         <div class="form-group">
                             <label>Target Platforms:</label>
                             <div class="input-with-uty">
@@ -216,7 +270,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- Tech Stack (Collapsible) -->
                         <div class="collapsible-section">
                             <div class="collapsible-header">
@@ -273,7 +327,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- Timeline and Constraints (Collapsible) -->
                         <div class="collapsible-section">
                             <div class="collapsible-header">
@@ -308,7 +362,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="nav-buttons">
                             <button type="button" class="prev-btn">Previous</button>
                             <button type="button" class="next-btn">Next</button>
@@ -321,7 +375,7 @@
                             <h2>3. Design & Visuals</h2>
                             <button type="button" class="skip-btn" data-section="design-visuals">Skip</button>
                         </div>
-                        
+
                         <div class="collapsible-section" id="visual-style">
                             <div class="collapsible-header">
                                 <h3>Visual Style</h3>
@@ -337,7 +391,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="form-group">
                                     <label>Colors:</label>
                                     <div class="input-with-uty">
@@ -358,7 +412,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="collapsible-section" id="typography-references">
                             <div class="collapsible-header">
                                 <h3>Typography & References</h3>
@@ -374,7 +428,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="form-group">
                                     <label for="visual-references">Visual References:</label>
                                     <div class="input-with-uty">
@@ -386,7 +440,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="nav-buttons">
                             <button type="button" class="prev-btn">Previous</button>
                             <button type="button" class="next-btn">Next</button>
@@ -399,7 +453,7 @@
                             <h2>4. User Interaction & Experience</h2>
                             <button type="button" class="skip-btn" data-section="user-interaction">Skip</button>
                         </div>
-                        
+
                         <div class="collapsible-section" id="user-interaction-details">
                             <div class="collapsible-header">
                                 <h3>Interaction Details</h3>
@@ -415,7 +469,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="form-group">
                                     <label for="outputs">Outputs:</label>
                                     <div class="input-with-uty">
@@ -427,7 +481,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="nav-buttons">
                             <button type="button" class="prev-btn">Previous</button>
                             <button type="button" class="next-btn">Next</button>
@@ -440,7 +494,7 @@
                             <h2>5. Content & Data Management</h2>
                             <button type="button" class="skip-btn" data-section="content-data">Skip</button>
                         </div>
-                        
+
                         <div class="collapsible-section" id="authentication-security">
                             <div class="collapsible-header">
                                 <h3>Authentication & Security</h3>
@@ -462,7 +516,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="form-group">
                                     <label>Security Level:</label>
                                     <div class="input-with-uty">
@@ -480,7 +534,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="collapsible-section" id="data-ai">
                             <div class="collapsible-header">
                                 <h3>Data Storage & AI</h3>
@@ -496,7 +550,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="form-group">
                                     <label for="ai-integration">AI Integration:</label>
                                     <div class="input-with-uty">
@@ -515,7 +569,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="nav-buttons">
                             <button type="button" class="prev-btn">Previous</button>
                             <button type="button" class="next-btn">Next</button>
@@ -528,7 +582,7 @@
                             <h2>6. Performance & Compatibility</h2>
                             <button type="button" class="skip-btn" data-section="performance">Skip</button>
                         </div>
-                        
+
                         <div class="collapsible-section" id="performance-requirements">
                             <div class="collapsible-header">
                                 <h3>Performance Requirements</h3>
@@ -544,7 +598,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="form-group">
                                     <label for="seo">SEO & Accessibility:</label>
                                     <div class="input-with-uty">
@@ -556,7 +610,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="collapsible-section" id="compatibility">
                             <div class="collapsible-header">
                                 <h3>Compatibility</h3>
@@ -581,7 +635,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="nav-buttons">
                             <button type="button" class="prev-btn">Previous</button>
                             <button type="button" class="next-btn">Next</button>
@@ -594,7 +648,7 @@
                             <h2>7. Additional Features</h2>
                             <button type="button" class="skip-btn" data-section="additional-features">Skip</button>
                         </div>
-                        
+
                         <div class="collapsible-section" id="feature-requests">
                             <div class="collapsible-header">
                                 <h3>Feature Requests</h3>
@@ -610,7 +664,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="form-group">
                                     <label for="success-criteria">Success Criteria:</label>
                                     <div class="input-with-uty">
@@ -622,7 +676,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="collapsible-section" id="inspirations-budget">
                             <div class="collapsible-header">
                                 <h3>Inspirations & Budget</h3>
@@ -638,7 +692,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="form-group">
                                     <label for="budget-constraints">Budget Constraints:</label>
                                     <div class="input-with-uty">
@@ -656,7 +710,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="nav-buttons">
                             <button type="button" class="prev-btn">Previous</button>
                             <button type="button" id="review-btn" class="review-btn">Review</button>
@@ -671,9 +725,30 @@
                         <div id="review-content">
                             <!-- Content will be populated by JavaScript -->
                         </div>
+                        <div class="export-actions">
+                            <div class="export-row">
+                                <div class="format-selector">
+                                    <label>Export Format:</label>
+                                    <select id="export-format">
+                                        <option value="pdf">PDF</option>
+                                        <option value="txt">TXT</option>
+                                    </select>
+                                </div>
+                                <button type="button" id="generate-pdf" class="generate-btn">Generate Brief</button>
+                            </div>
+                            <div class="copy-actions">
+                                <button type="button" id="copy-markdown" class="copy-btn">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                    Copy as Markdown
+                                </button>
+                                <button type="button" id="copy-prompt" class="copy-btn copy-btn-accent">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+                                    Copy as AI Prompt
+                                </button>
+                            </div>
+                        </div>
                         <div class="nav-buttons">
                             <button type="button" class="prev-btn">Previous</button>
-                            <button type="button" id="generate-pdf" class="generate-btn">Generate Brief</button>
                         </div>
                     </section>
                 </form>
@@ -685,6 +760,9 @@
         <p>&copy; 2025 App Planner</p>
     </footer>
 
+    <!-- Toast container -->
+    <div id="toast-container" class="toast-container"></div>
+
     <script src="script.js"></script>
 </body>
-</html> 
+</html>
