@@ -84,7 +84,7 @@
         </div>
 
         <!-- Right: Live Spec -->
-        <div class="spec-pane">
+        <div class="spec-pane" id="spec-pane">
             <div class="spec-header">
                 <h2>Live Spec</h2>
                 <div class="spec-actions">
@@ -117,14 +117,72 @@
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                         Markdown
                     </button>
+                    <button class="btn-export" id="download-md" data-target="download-md">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        .md
+                    </button>
+                    <button class="btn-export" id="download-txt" data-target="download-txt">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        .txt
+                    </button>
+                    <button class="btn-export" id="share-url" data-target="share">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                        Share
+                    </button>
                 </div>
                 <button class="btn-save" id="save-plan">Save Plan</button>
             </div>
         </div>
     </div>
 
+    <!-- Mobile spec toggle (visible on small screens) -->
+    <button id="mobile-spec-toggle" class="mobile-spec-toggle hidden" aria-label="Toggle spec panel">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <span>Spec</span>
+    </button>
+
+    <!-- Prompt Preview Modal -->
+    <div id="prompt-modal" class="prompt-modal hidden" role="dialog" aria-modal="true" aria-label="Prompt preview">
+        <div class="prompt-modal-backdrop"></div>
+        <div class="prompt-modal-content">
+            <div class="prompt-modal-header">
+                <h3 id="prompt-modal-title">Prompt Preview</h3>
+                <button id="prompt-modal-close" class="btn-icon" aria-label="Close">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <textarea id="prompt-modal-editor" class="prompt-modal-editor" spellcheck="false"></textarea>
+            <div class="prompt-modal-footer">
+                <button id="prompt-modal-copy" class="btn-primary">Copy to clipboard</button>
+                <button id="prompt-modal-download" class="btn-export">Download</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Compare Modal -->
+    <div id="compare-modal" class="compare-modal hidden" role="dialog" aria-modal="true" aria-label="Compare plans">
+        <div class="prompt-modal-backdrop"></div>
+        <div class="compare-modal-content">
+            <div class="prompt-modal-header">
+                <h3>Compare Plans</h3>
+                <button id="compare-modal-close" class="btn-icon" aria-label="Close">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="compare-body" id="compare-body">
+                <p class="compare-instructions">Select two plans from history to compare side by side.</p>
+                <div class="compare-selectors">
+                    <select id="compare-left" class="compare-select" aria-label="Left plan"><option value="">Pick plan A...</option></select>
+                    <span class="compare-vs">vs</span>
+                    <select id="compare-right" class="compare-select" aria-label="Right plan"><option value="">Pick plan B...</option></select>
+                </div>
+                <div class="compare-grid hidden" id="compare-grid"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast -->
-    <div id="toast" class="toast"></div>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script src="script.js"></script>
 </body>
