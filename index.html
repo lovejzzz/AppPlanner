@@ -30,16 +30,37 @@
                 <button id="start-btn" class="btn-primary" disabled>Plan it</button>
             </div>
 
-            <div class="templates-row">
-                <span class="templates-label">Or start from:</span>
-                <button class="template-chip" data-idea="A SaaS dashboard with team management, billing, and analytics">SaaS Dashboard</button>
-                <button class="template-chip" data-idea="A mobile-first social app for sharing short video clips with friends">Social Video App</button>
-                <button class="template-chip" data-idea="An e-commerce store selling handmade crafts with cart and checkout">E-commerce Store</button>
-                <button class="template-chip" data-idea="A personal portfolio site with blog, project gallery, and contact form">Portfolio Site</button>
+            <!-- Draft resume banner -->
+            <div id="draft-banner" class="draft-banner hidden">
+                <div class="draft-banner-text">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+                    <span>You have an unsaved draft. Resume?</span>
+                </div>
+                <div class="draft-banner-actions">
+                    <button id="draft-resume" class="btn-draft-resume">Resume</button>
+                    <button id="draft-discard" class="btn-draft-discard">Discard</button>
+                </div>
+            </div>
+
+            <div class="templates-section">
+                <div class="templates-row" id="templates-row">
+                    <span class="templates-label">Or start from:</span>
+                    <div class="template-categories" id="template-categories">
+                        <button class="template-cat-chip active" data-cat="all">All</button>
+                        <button class="template-cat-chip" data-cat="business">Business</button>
+                        <button class="template-cat-chip" data-cat="social">Social</button>
+                        <button class="template-cat-chip" data-cat="creative">Creative</button>
+                        <button class="template-cat-chip" data-cat="utility">Utility</button>
+                    </div>
+                </div>
+                <div class="template-chips" id="template-chips"></div>
             </div>
 
             <div id="history-section" class="history-section hidden">
                 <h3>Recent plans</h3>
+                <div id="history-search-wrap" class="history-search-wrap hidden">
+                    <input id="history-search" type="text" placeholder="Search plans..." class="history-search" aria-label="Search plans">
+                </div>
                 <div id="history-list" class="history-list"></div>
             </div>
         </div>
@@ -59,6 +80,9 @@
             <div class="conv-header">
                 <button id="back-btn" class="btn-icon" aria-label="Back to start">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                </button>
+                <button id="undo-btn" class="btn-icon" aria-label="Undo last answer" title="Undo last answer (Ctrl+Z)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
                 </button>
                 <div class="conv-title">
                     <span id="idea-display"></span>
@@ -84,10 +108,15 @@
         </div>
 
         <!-- Right: Live Spec -->
-        <div class="spec-pane">
+        <div class="spec-pane" id="spec-pane">
             <div class="spec-header">
                 <h2>Live Spec</h2>
                 <div class="spec-actions">
+                    <!-- Completeness indicator -->
+                    <div class="spec-completeness" id="spec-completeness" title="Spec completeness"></div>
+                    <button id="keyboard-help-btn" class="btn-icon" aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    </button>
                     <button id="theme-toggle-2" class="btn-icon" aria-label="Toggle theme">
                         <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
                         <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
@@ -117,14 +146,114 @@
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                         Markdown
                     </button>
+                    <button class="btn-export" id="copy-json" data-target="json">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                        JSON
+                    </button>
+                    <button class="btn-export" id="download-md" data-target="download-md">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        .md
+                    </button>
+                    <button class="btn-export" id="download-txt" data-target="download-txt">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        .txt
+                    </button>
+                    <button class="btn-export" id="share-url" data-target="share">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                        Share
+                    </button>
                 </div>
                 <button class="btn-save" id="save-plan">Save Plan</button>
             </div>
         </div>
     </div>
 
+    <!-- Mobile spec toggle (visible on small screens) -->
+    <button id="mobile-spec-toggle" class="mobile-spec-toggle hidden" aria-label="Toggle spec panel">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <span>Spec</span>
+    </button>
+
+    <!-- Prompt Preview Modal -->
+    <div id="prompt-modal" class="prompt-modal hidden" role="dialog" aria-modal="true" aria-label="Prompt preview">
+        <div class="prompt-modal-backdrop"></div>
+        <div class="prompt-modal-content">
+            <div class="prompt-modal-header">
+                <h3 id="prompt-modal-title">Prompt Preview</h3>
+                <div class="prompt-modal-meta">
+                    <span id="prompt-char-count" class="prompt-meta-badge" title="Character count">0 chars</span>
+                    <span id="prompt-token-est" class="prompt-meta-badge" title="Estimated tokens (~4 chars/token)">~0 tokens</span>
+                </div>
+                <button id="prompt-modal-close" class="btn-icon" aria-label="Close">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <textarea id="prompt-modal-editor" class="prompt-modal-editor" spellcheck="false"></textarea>
+            <div class="prompt-modal-footer">
+                <button id="prompt-modal-copy" class="btn-primary">Copy to clipboard</button>
+                <button id="prompt-modal-download" class="btn-export">Download</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Compare Modal -->
+    <div id="compare-modal" class="compare-modal hidden" role="dialog" aria-modal="true" aria-label="Compare plans">
+        <div class="prompt-modal-backdrop"></div>
+        <div class="compare-modal-content">
+            <div class="prompt-modal-header">
+                <h3>Compare Plans</h3>
+                <button id="compare-modal-close" class="btn-icon" aria-label="Close">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="compare-body" id="compare-body">
+                <p class="compare-instructions">Select two plans from history to compare side by side.</p>
+                <div class="compare-selectors">
+                    <select id="compare-left" class="compare-select" aria-label="Left plan"><option value="">Pick plan A...</option></select>
+                    <span class="compare-vs">vs</span>
+                    <select id="compare-right" class="compare-select" aria-label="Right plan"><option value="">Pick plan B...</option></select>
+                </div>
+                <div class="compare-grid hidden" id="compare-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Keyboard Shortcuts Modal -->
+    <div id="kbd-modal" class="prompt-modal hidden" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
+        <div class="prompt-modal-backdrop"></div>
+        <div class="prompt-modal-content kbd-modal-content">
+            <div class="prompt-modal-header">
+                <h3>Keyboard Shortcuts</h3>
+                <button id="kbd-modal-close" class="btn-icon" aria-label="Close">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="kbd-body">
+                <div class="kbd-group">
+                    <h4>During Questions</h4>
+                    <div class="kbd-row"><kbd>1</kbd>-<kbd>9</kbd> <span>Quick-pick option by number</span></div>
+                    <div class="kbd-row"><kbd>Enter</kbd> <span>Confirm multi-select / send custom text</span></div>
+                    <div class="kbd-row"><kbd>Ctrl</kbd>+<kbd>Z</kbd> <span>Undo last answer</span></div>
+                </div>
+                <div class="kbd-group">
+                    <h4>General</h4>
+                    <div class="kbd-row"><kbd>?</kbd> <span>Toggle this help</span></div>
+                    <div class="kbd-row"><kbd>Esc</kbd> <span>Close modals</span></div>
+                </div>
+                <div class="kbd-group">
+                    <h4>Spec Panel</h4>
+                    <div class="kbd-row"><span>Click any section</span> <span>Re-answer that question</span></div>
+                    <div class="kbd-row"><kbd>Tab</kbd> <span>Navigate spec sections</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confetti canvas -->
+    <canvas id="confetti-canvas" class="confetti-canvas"></canvas>
+
     <!-- Toast -->
-    <div id="toast" class="toast"></div>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
     <script src="script.js"></script>
 </body>

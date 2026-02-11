@@ -8,8 +8,59 @@ document.addEventListener('DOMContentLoaded', () => {
         complete: false
     };
 
+    // ===== Templates Library =====
+    const TEMPLATES = [
+        { cat: 'business', label: 'SaaS Dashboard', idea: 'A SaaS dashboard with team management, billing, and analytics' },
+        { cat: 'business', label: 'E-commerce Store', idea: 'An e-commerce store selling handmade crafts with cart and checkout' },
+        { cat: 'business', label: 'Invoice Generator', idea: 'An invoice and estimate generator for freelancers with PDF export and payment tracking' },
+        { cat: 'business', label: 'CRM Tool', idea: 'A lightweight CRM to track leads, deals, and customer conversations' },
+        { cat: 'social', label: 'Social Video App', idea: 'A mobile-first social app for sharing short video clips with friends' },
+        { cat: 'social', label: 'Community Forum', idea: 'A community discussion forum with categories, upvotes, and user profiles' },
+        { cat: 'social', label: 'Event Platform', idea: 'An event planning platform where users can create, share, and RSVP to local events' },
+        { cat: 'creative', label: 'Portfolio Site', idea: 'A personal portfolio site with blog, project gallery, and contact form' },
+        { cat: 'creative', label: 'Recipe Book', idea: 'A personal recipe book app where users save, tag, and share their favorite recipes' },
+        { cat: 'creative', label: 'Mood Board', idea: 'A visual mood board tool for designers to collect and arrange inspiration images' },
+        { cat: 'utility', label: 'Habit Tracker', idea: 'A daily habit tracker with streaks, stats, and gentle reminders' },
+        { cat: 'utility', label: 'Budget Planner', idea: 'A personal budget planner that categorizes expenses and shows monthly trends' },
+        { cat: 'utility', label: 'Bookmark Manager', idea: 'A bookmark manager with tags, search, and link preview screenshots' },
+        { cat: 'utility', label: 'Note Taking App', idea: 'A markdown-based note taking app with folders, tags, and full-text search' },
+    ];
+
+    // ===== Auto-save Draft =====
+    const DRAFT_KEY = 'app-planner-draft';
+
+    function saveDraft() {
+        if (!state.idea) return;
+        const draft = {
+            idea: state.idea,
+            ideaElaborated: state.ideaElaborated,
+            answers: { ...state.answers },
+            currentStep: state.currentStep,
+            complete: state.complete,
+            ts: Date.now()
+        };
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    }
+
+    function loadDraft() {
+        try {
+            const raw = localStorage.getItem(DRAFT_KEY);
+            if (!raw) return null;
+            const draft = JSON.parse(raw);
+            // Discard drafts older than 24 hours
+            if (Date.now() - draft.ts > 24 * 60 * 60 * 1000) {
+                clearDraft();
+                return null;
+            }
+            return draft;
+        } catch { return null; }
+    }
+
+    function clearDraft() {
+        localStorage.removeItem(DRAFT_KEY);
+    }
+
     // ===== Context Intelligence =====
-    // Keyword -> recommended options mapping
     const CONTEXT_HINTS = {
         platform: {
             'web': 'Web App', 'website': 'Web App', 'site': 'Web App', 'browser': 'Web App',
@@ -54,8 +105,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ===== Question Engine =====
-    // All questions are chip-based. Questions with customOption: true show a
-    // "Type my own" chip that reveals a text input inline.
     const QUESTIONS = [
         {
             id: 'platform',
@@ -75,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
             customPlaceholder: 'e.g. busy parents, fitness enthusiasts...',
             suggestion: 'Be specific — it helps the AI tailor the UX.',
             specSection: 'Target Audience',
-            specRender: v => escapeHtml(v)
+            specRender: v => escapeHtml(Array.isArray(v) ? v.join(', ') : v)
         },
         {
             id: 'vibe',
@@ -174,6 +223,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     ];
 
+    // Core questions (after which "Done early" becomes available)
+    const CORE_QUESTION_COUNT = 6; // platform, audience, vibe, features, features_custom, auth
+
     // ===== DOM Refs =====
     const $ = id => document.getElementById(id);
     const landing = $('landing');
@@ -185,11 +237,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const convInputArea = $('conv-input-area');
     const specBody = $('spec-body');
     const specFooter = $('spec-footer');
+    const specPane = $('spec-pane');
     const ringFill = $('ring-fill');
     const ringText = $('ring-text');
     const toastEl = $('toast');
     const historySection = $('history-section');
     const historyList = $('history-list');
+    const mobileSpecToggle = $('mobile-spec-toggle');
+    const promptModal = $('prompt-modal');
+    const promptModalEditor = $('prompt-modal-editor');
+    const promptModalTitle = $('prompt-modal-title');
+    const compareModal = $('compare-modal');
+    const compareLeft = $('compare-left');
+    const compareRight = $('compare-right');
+    const compareGrid = $('compare-grid');
+    const draftBanner = $('draft-banner');
+    const undoBtn = $('undo-btn');
+    const kbdModal = $('kbd-modal');
+    const specCompleteness = $('spec-completeness');
+    const promptCharCount = $('prompt-char-count');
+    const promptTokenEst = $('prompt-token-est');
+    const confettiCanvas = $('confetti-canvas');
+    const templateChipsEl = $('template-chips');
+    const historySearchWrap = $('history-search-wrap');
+    const historySearchInput = $('history-search');
 
     // ===== Theme =====
     function initTheme() {
@@ -207,6 +278,203 @@ document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     $('theme-toggle').addEventListener('click', toggleTheme);
     $('theme-toggle-2').addEventListener('click', toggleTheme);
+
+    // ===== Render Templates =====
+    let activeTemplateCat = 'all';
+
+    function renderTemplates() {
+        templateChipsEl.innerHTML = '';
+        const filtered = activeTemplateCat === 'all'
+            ? TEMPLATES
+            : TEMPLATES.filter(t => t.cat === activeTemplateCat);
+
+        filtered.forEach(t => {
+            const chip = document.createElement('button');
+            chip.className = 'template-chip';
+            chip.textContent = t.label;
+            chip.addEventListener('click', () => {
+                ideaInput.value = t.idea;
+                startBtn.disabled = false;
+                ideaInput.focus();
+            });
+            templateChipsEl.appendChild(chip);
+        });
+    }
+
+    document.querySelectorAll('.template-cat-chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.template-cat-chip').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            activeTemplateCat = btn.dataset.cat;
+            renderTemplates();
+        });
+    });
+
+    renderTemplates();
+
+    // ===== Draft Banner =====
+    function showDraftBanner() {
+        const draft = loadDraft();
+        if (draft && draft.idea) {
+            draftBanner.classList.remove('hidden');
+            draftBanner.querySelector('span').textContent = `Draft: "${draft.idea.substring(0, 40)}${draft.idea.length > 40 ? '...' : ''}" — Resume?`;
+        }
+    }
+
+    $('draft-resume').addEventListener('click', () => {
+        const draft = loadDraft();
+        if (!draft) return;
+        draftBanner.classList.add('hidden');
+        resumeFromDraft(draft);
+    });
+
+    $('draft-discard').addEventListener('click', () => {
+        clearDraft();
+        draftBanner.classList.add('hidden');
+    });
+
+    function resumeFromDraft(draft) {
+        state.idea = draft.idea;
+        state.ideaElaborated = draft.ideaElaborated || '';
+        state.answers = draft.answers || {};
+        state.currentStep = draft.currentStep || 0;
+        state.complete = draft.complete || false;
+
+        landing.classList.add('hidden');
+        planner.classList.remove('hidden');
+        if (isMobile()) mobileSpecToggle.classList.remove('hidden');
+        ideaDisplay.textContent = state.idea;
+
+        convMessages.innerHTML = '';
+        specBody.innerHTML = '';
+
+        addBotMessage(`Resuming your draft for "${escapeHtml(state.idea)}".`);
+
+        // Rebuild spec from saved answers
+        const fullIdea = state.ideaElaborated
+            ? `<strong>${escapeHtml(state.idea)}</strong><br><span style="color:var(--text-secondary)">${escapeHtml(state.ideaElaborated)}</span>`
+            : `<strong>${escapeHtml(state.idea)}</strong>`;
+        updateSpecSection('Idea', fullIdea);
+
+        QUESTIONS.forEach((q, i) => {
+            const val = state.answers[q.id];
+            if (val !== null && val !== undefined) {
+                updateSpecSection(q.specSection, q.specRender(val));
+            }
+        });
+
+        updateProgress();
+        updateCompleteness();
+
+        if (state.complete) {
+            specFooter.classList.remove('hidden');
+            addBotMessage('Your spec is restored. Use the export buttons or click spec sections to revise.');
+        } else {
+            askCurrentQuestion();
+        }
+    }
+
+    showDraftBanner();
+
+    // ===== Undo Button =====
+    undoBtn.addEventListener('click', () => undoLastAnswer());
+
+    function undoLastAnswer() {
+        if (state.complete) return;
+        const prevStep = state.currentStep - 1;
+        if (prevStep < 0) return;
+        goBackToQuestion(prevStep);
+    }
+
+    // ===== Keyboard Shortcuts Modal =====
+    $('keyboard-help-btn').addEventListener('click', () => toggleKbdModal());
+    $('kbd-modal-close').addEventListener('click', () => closeKbdModal());
+    kbdModal.querySelector('.prompt-modal-backdrop').addEventListener('click', () => closeKbdModal());
+
+    function toggleKbdModal() {
+        kbdModal.classList.toggle('hidden');
+    }
+
+    function closeKbdModal() {
+        kbdModal.classList.add('hidden');
+    }
+
+    // ===== Spec Completeness Indicator =====
+    function updateCompleteness() {
+        specCompleteness.innerHTML = '';
+        QUESTIONS.forEach((q, i) => {
+            const dot = document.createElement('div');
+            dot.className = 'completeness-dot';
+            dot.title = q.specSection;
+            const val = state.answers[q.id];
+            if (i === state.currentStep && !state.complete) {
+                dot.classList.add('current');
+            } else if (val !== undefined && val !== null) {
+                dot.classList.add('answered');
+            } else if (val === null) {
+                dot.classList.add('skipped');
+            }
+            specCompleteness.appendChild(dot);
+        });
+    }
+
+    // ===== Confetti =====
+    function fireConfetti() {
+        const ctx = confettiCanvas.getContext('2d');
+        confettiCanvas.width = window.innerWidth;
+        confettiCanvas.height = window.innerHeight;
+
+        const particles = [];
+        const colors = ['#7c6bf5', '#34d399', '#fb923c', '#f87171', '#60a5fa', '#fbbf24'];
+
+        for (let i = 0; i < 80; i++) {
+            particles.push({
+                x: Math.random() * confettiCanvas.width,
+                y: -20 - Math.random() * 100,
+                w: 6 + Math.random() * 6,
+                h: 4 + Math.random() * 4,
+                vx: (Math.random() - 0.5) * 4,
+                vy: 2 + Math.random() * 4,
+                rot: Math.random() * Math.PI * 2,
+                rotSpeed: (Math.random() - 0.5) * 0.15,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                life: 1
+            });
+        }
+
+        let frame = 0;
+        function animate() {
+            ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+            let alive = false;
+
+            particles.forEach(p => {
+                if (p.life <= 0) return;
+                alive = true;
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.08;
+                p.rot += p.rotSpeed;
+                p.life -= 0.008;
+
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.rot);
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+                ctx.restore();
+            });
+
+            frame++;
+            if (alive && frame < 180) {
+                requestAnimationFrame(animate);
+            } else {
+                ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+            }
+        }
+
+        animate();
+    }
 
     // ===== Toast =====
     let toastTimer;
@@ -231,19 +499,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     startBtn.addEventListener('click', startPlanning);
 
-    // Template chips
-    document.querySelectorAll('.template-chip').forEach(chip => {
-        chip.addEventListener('click', () => {
-            ideaInput.value = chip.dataset.idea;
-            startBtn.disabled = false;
-            ideaInput.focus();
-        });
+    // History search
+    historySearchInput.addEventListener('input', () => {
+        renderHistory(historySearchInput.value);
     });
 
     // Back button
     $('back-btn').addEventListener('click', () => {
         planner.classList.add('hidden');
         landing.classList.remove('hidden');
+        mobileSpecToggle.classList.add('hidden');
+        specPane.classList.remove('mobile-visible');
         resetState();
     });
 
@@ -257,13 +523,28 @@ document.addEventListener('DOMContentLoaded', () => {
         convInputArea.innerHTML = '';
         specBody.innerHTML = '<div class="spec-empty"><p>Your spec will build here as you answer questions...</p></div>';
         specFooter.classList.add('hidden');
+        specCompleteness.innerHTML = '';
         updateProgress();
+        clearDraft();
     }
+
+    // ===== Mobile Spec Toggle (#6) =====
+    function isMobile() {
+        return window.matchMedia('(max-width: 768px)').matches;
+    }
+
+    mobileSpecToggle.addEventListener('click', () => {
+        specPane.classList.toggle('mobile-visible');
+        const isOpen = specPane.classList.contains('mobile-visible');
+        mobileSpecToggle.querySelector('span').textContent = isOpen ? 'Chat' : 'Spec';
+    });
 
     // ===== Typing Indicator =====
     function showTypingIndicator() {
         const div = document.createElement('div');
         div.className = 'msg msg-bot msg-typing';
+        div.setAttribute('role', 'status');
+        div.setAttribute('aria-label', 'Planner is typing');
         div.innerHTML = `<div class="typing-dots"><span></span><span></span><span></span></div>`;
         convMessages.appendChild(div);
         scrollConv();
@@ -294,6 +575,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         landing.classList.add('hidden');
         planner.classList.remove('hidden');
+        if (isMobile()) mobileSpecToggle.classList.remove('hidden');
         ideaDisplay.textContent = state.idea;
 
         // Clear previous
@@ -309,7 +591,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const isShort = wordCount < 6 || state.idea.length < 30;
 
         if (isShort) {
-            state.currentStep = -1; // elaboration step
+            state.currentStep = -1;
             addBotMessageWithTyping(
                 `Love it! "${escapeHtml(state.idea)}" sounds fun. Can you tell me a bit more? What should it do?`
             ).then(() => {
@@ -339,6 +621,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const input = document.createElement('textarea');
         input.rows = 2;
         input.placeholder = 'e.g. A cat character that does random silly animations when you tap it...';
+        input.setAttribute('aria-label', 'Elaborate on your idea');
         input.addEventListener('keydown', e => {
             if (e.key === 'Enter' && !e.shiftKey && input.value.trim()) {
                 e.preventDefault();
@@ -347,6 +630,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         const sendBtn = document.createElement('button');
+        sendBtn.setAttribute('aria-label', 'Send');
         sendBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>';
         sendBtn.addEventListener('click', () => {
             if (input.value.trim()) handleElaboration(input.value.trim());
@@ -370,7 +654,6 @@ document.addEventListener('DOMContentLoaded', () => {
         addUserMessage(text);
         convInputArea.innerHTML = '';
 
-        // Update the spec idea section with full description
         const fullIdea = `<strong>${escapeHtml(state.idea)}</strong><br><span style="color:var(--text-secondary)">${escapeHtml(text)}</span>`;
         updateSpecSection('Idea', fullIdea);
 
@@ -383,7 +666,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // ===== Conversation =====
     function addBotMessage(text, skipNote) {
         const div = document.createElement('div');
-        div.className = 'msg msg-bot';
+        div.className = 'msg msg-bot msg-entering';
+        div.setAttribute('role', 'status');
         let html = `<div class="msg-label">Planner</div>${text}`;
         if (skipNote) html += `<div class="msg-skip-note">${skipNote}</div>`;
         div.innerHTML = html;
@@ -393,7 +677,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function addUserMessage(text) {
         const div = document.createElement('div');
-        div.className = 'msg msg-user';
+        div.className = 'msg msg-user msg-entering';
         div.textContent = text;
         convMessages.appendChild(div);
         scrollConv();
@@ -421,6 +705,7 @@ document.addEventListener('DOMContentLoaded', () => {
             addBotMessage(q.question);
             renderInput(q);
             updateProgress();
+            updateCompleteness();
         }, delay);
     }
 
@@ -429,9 +714,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const recommendation = getRecommendation(q.id);
         const wrapper = document.createElement('div');
 
-        // All questions are now chip-based
         const chipsDiv = document.createElement('div');
         chipsDiv.className = 'input-chips';
+        chipsDiv.setAttribute('role', 'group');
+        chipsDiv.setAttribute('aria-label', q.question);
 
         if (q.multi) {
             // ---- Multi-select ----
@@ -443,20 +729,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 chip.className = 'chip';
                 chip.textContent = opt;
                 chip.setAttribute('data-key', idx + 1 <= 9 ? idx + 1 : '');
+                chip.setAttribute('aria-pressed', 'false');
                 chip.addEventListener('click', () => {
                     if (selected.has(opt)) {
                         selected.delete(opt);
                         chip.classList.remove('selected');
+                        chip.setAttribute('aria-pressed', 'false');
                     } else {
                         selected.add(opt);
                         chip.classList.add('selected');
+                        chip.setAttribute('aria-pressed', 'true');
                     }
                     updateConfirmState();
                 });
                 chipsDiv.appendChild(chip);
             });
 
-            // "Type my own" chip for custom input
             if (q.customOption) {
                 const customChip = document.createElement('button');
                 customChip.className = 'chip chip-custom';
@@ -470,7 +758,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 chipsDiv.appendChild(customChip);
             }
 
-            // Skip chip
             const skipChip = document.createElement('button');
             skipChip.className = 'chip chip-skip';
             skipChip.textContent = 'Skip';
@@ -479,7 +766,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             wrapper.appendChild(chipsDiv);
 
-            // Custom text input row (hidden by default)
             let customInput;
             const customRow = document.createElement('div');
             customRow.className = 'custom-input-row hidden';
@@ -488,6 +774,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 customInput.type = 'text';
                 customInput.placeholder = q.customPlaceholder || 'Type your own...';
                 customInput.className = 'custom-text-input';
+                customInput.setAttribute('aria-label', 'Custom answer');
                 customInput.addEventListener('input', () => {
                     customText = customInput.value.trim();
                     updateConfirmState();
@@ -502,7 +789,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 wrapper.appendChild(customRow);
             }
 
-            // Confirm button
             const controls = document.createElement('div');
             controls.className = 'multi-controls';
             const confirmBtn = document.createElement('button');
@@ -517,7 +803,6 @@ document.addEventListener('DOMContentLoaded', () => {
             function submitMulti() {
                 const result = Array.from(selected);
                 if (customText) {
-                    // Split by commas to allow multiple custom entries
                     customText.split(',').map(s => s.trim()).filter(Boolean).forEach(s => result.push(s));
                 }
                 if (result.length > 0) handleAnswer(q, result);
@@ -525,11 +810,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
             confirmBtn.addEventListener('click', submitMulti);
             controls.appendChild(confirmBtn);
+
+            // #8 Done early button
+            if (state.currentStep >= CORE_QUESTION_COUNT) {
+                const doneBtn = document.createElement('button');
+                doneBtn.className = 'btn-done-early';
+                doneBtn.textContent = 'That\'s enough, generate!';
+                doneBtn.addEventListener('click', () => {
+                    cleanupKeyHandlers();
+                    convInputArea.innerHTML = '';
+                    addUserMessage('Done early — generate my spec!');
+                    state.currentStep = QUESTIONS.length;
+                    finishPlanning();
+                });
+                controls.appendChild(doneBtn);
+            }
+
             wrapper.appendChild(controls);
 
-            // Keyboard handler
             wrapper._keyHandler = e => {
-                // Don't capture keys when typing in custom input
                 if (document.activeElement === customInput) return;
                 if (e.key === 'Enter' && (selected.size > 0 || customText)) {
                     submitMulti();
@@ -541,9 +840,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (selected.has(opt)) {
                         selected.delete(opt);
                         chip.classList.remove('selected');
+                        chip.setAttribute('aria-pressed', 'false');
                     } else {
                         selected.add(opt);
                         chip.classList.add('selected');
+                        chip.setAttribute('aria-pressed', 'true');
                     }
                     updateConfirmState();
                 }
@@ -564,7 +865,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 chipsDiv.appendChild(chip);
             });
 
-            // "Type my own" chip
             let customInput;
             if (q.customOption) {
                 const customChip = document.createElement('button');
@@ -579,7 +879,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 chipsDiv.appendChild(customChip);
             }
 
-            // Skip chip
             const skipChip = document.createElement('button');
             skipChip.className = 'chip chip-skip';
             skipChip.textContent = 'Skip';
@@ -588,7 +887,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             wrapper.appendChild(chipsDiv);
 
-            // Custom text row for single-select
             const customRow = document.createElement('div');
             customRow.className = 'custom-input-row hidden';
             if (q.customOption) {
@@ -597,12 +895,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 customInput = document.createElement('input');
                 customInput.type = 'text';
                 customInput.placeholder = q.customPlaceholder || 'Type your own...';
+                customInput.setAttribute('aria-label', 'Custom answer');
                 customInput.addEventListener('keydown', e => {
                     if (e.key === 'Enter' && customInput.value.trim()) {
                         handleAnswer(q, customInput.value.trim());
                     }
                 });
                 const sendBtn = document.createElement('button');
+                sendBtn.setAttribute('aria-label', 'Send');
                 sendBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>';
                 sendBtn.addEventListener('click', () => {
                     if (customInput.value.trim()) handleAnswer(q, customInput.value.trim());
@@ -613,7 +913,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 wrapper.appendChild(customRow);
             }
 
-            // Keyboard handler
+            // #8 Done early button for single-select
+            if (state.currentStep >= CORE_QUESTION_COUNT) {
+                const doneRow = document.createElement('div');
+                doneRow.className = 'multi-controls';
+                const doneBtn = document.createElement('button');
+                doneBtn.className = 'btn-done-early';
+                doneBtn.textContent = 'That\'s enough, generate!';
+                doneBtn.addEventListener('click', () => {
+                    cleanupKeyHandlers();
+                    convInputArea.innerHTML = '';
+                    addUserMessage('Done early — generate my spec!');
+                    state.currentStep = QUESTIONS.length;
+                    finishPlanning();
+                });
+                doneRow.appendChild(doneBtn);
+                wrapper.appendChild(doneRow);
+            }
+
             wrapper._keyHandler = e => {
                 if (document.activeElement === customInput) return;
                 const num = parseInt(e.key);
@@ -655,10 +972,12 @@ document.addEventListener('DOMContentLoaded', () => {
         addUserMessage(display);
         convInputArea.innerHTML = '';
 
-        // Update spec
         updateSpecSection(q.specSection, q.specRender(value));
+        highlightSpecSection(q.specSection);
 
         state.currentStep++;
+        updateCompleteness();
+        saveDraft();
         setTimeout(() => askCurrentQuestion(), 200);
     }
 
@@ -668,12 +987,46 @@ document.addEventListener('DOMContentLoaded', () => {
         state.answers[q.id] = null;
         convInputArea.innerHTML = '';
 
-        // Add "AI will decide" to spec
         updateSpecSection(q.specSection, '<span class="spec-tag spec-tag-orange">AI will decide</span>');
 
         state.currentStep++;
+        updateCompleteness();
+        saveDraft();
         addBotMessageWithTyping('No worries, the AI will figure this out.').then(() => {
             setTimeout(() => askCurrentQuestion(), 200);
+        });
+    }
+
+    // ===== Auto-scroll + highlight spec section =====
+    function highlightSpecSection(sectionTitle) {
+        const section = specBody.querySelector(`[data-spec-section="${CSS.escape(sectionTitle)}"]`);
+        if (!section) return;
+        section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        section.classList.remove('spec-section-highlight');
+        void section.offsetWidth;
+        section.classList.add('spec-section-highlight');
+    }
+
+    // ===== #2 Go-back / Undo =====
+    function goBackToQuestion(questionIndex) {
+        if (questionIndex < 0 || questionIndex >= QUESTIONS.length) return;
+
+        cleanupKeyHandlers();
+        const q = QUESTIONS[questionIndex];
+
+        // Clear the answer
+        state.answers[q.id] = undefined;
+        state.currentStep = questionIndex;
+        state.complete = false;
+        specFooter.classList.add('hidden');
+
+        // Re-render spec (remove the section)
+        const section = specBody.querySelector(`[data-spec-section="${CSS.escape(q.specSection)}"]`);
+        if (section) section.remove();
+
+        addBotMessageWithTyping(`Let's redo: ${q.question}`).then(() => {
+            renderInput(q);
+            updateProgress();
         });
     }
 
@@ -688,15 +1041,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ===== Spec Panel =====
     function updateSpecSection(title, contentHtml) {
-        // Remove empty state
         const empty = specBody.querySelector('.spec-empty');
         if (empty) empty.remove();
 
-        // Check if section exists, update it
         let section = specBody.querySelector(`[data-spec-section="${CSS.escape(title)}"]`);
         if (section) {
             section.querySelector('.spec-section-content').innerHTML = contentHtml;
-            // Flash animation on update
             section.classList.remove('spec-updated');
             void section.offsetWidth;
             section.classList.add('spec-updated');
@@ -704,14 +1054,32 @@ document.addEventListener('DOMContentLoaded', () => {
             section = document.createElement('div');
             section.className = 'spec-section';
             section.setAttribute('data-spec-section', title);
+            section.setAttribute('role', 'button');
+            section.setAttribute('tabindex', '0');
+            section.setAttribute('aria-label', `Edit ${title}`);
             section.innerHTML = `
-                <div class="spec-section-title">${escapeHtml(title)}</div>
+                <div class="spec-section-title">${escapeHtml(title)}<span class="spec-edit-hint">click to edit</span></div>
                 <div class="spec-section-content">${contentHtml}</div>
             `;
+
+            // #1 Editable spec — click to jump back to that question
+            section.addEventListener('click', () => {
+                const qIdx = QUESTIONS.findIndex(q => q.specSection === title);
+                if (qIdx !== -1) {
+                    goBackToQuestion(qIdx);
+                }
+            });
+            section.addEventListener('keydown', e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    const qIdx = QUESTIONS.findIndex(q => q.specSection === title);
+                    if (qIdx !== -1) goBackToQuestion(qIdx);
+                }
+            });
+
             specBody.appendChild(section);
         }
 
-        // Scroll spec
         specBody.scrollTop = specBody.scrollHeight;
     }
 
@@ -721,7 +1089,6 @@ document.addEventListener('DOMContentLoaded', () => {
         updateProgress();
         convInputArea.innerHTML = '';
 
-        // Generate preview of Claude prompt
         const preview = generatePrompt('claude');
         const previewShort = preview.length > 300 ? preview.substring(0, 300) + '...' : preview;
 
@@ -729,19 +1096,21 @@ document.addEventListener('DOMContentLoaded', () => {
             `Your spec is ready! Here's a preview of what you'll get:` +
             `<div class="prompt-preview">${escapeHtml(previewShort)}</div>` +
             `Use the export buttons on the right panel to copy a prompt tailored for <strong>Claude</strong>, <strong>Cursor</strong>, <strong>v0</strong>, or raw <strong>Markdown</strong>.` +
+            `<br>You can also <strong>download</strong> as .md or .txt, or <strong>share</strong> a link.` +
             `<br><br>Hit <strong>Save Plan</strong> to revisit this later.`
         ).then(() => {
             specFooter.classList.remove('hidden');
+            updateCompleteness();
+            clearDraft();
 
-            // Celebration animation on the ring
+            // Celebration
             ringFill.style.stroke = 'var(--green)';
             setTimeout(() => { ringFill.style.stroke = ''; }, 2000);
+            fireConfetti();
         });
     }
 
     // ===== Prompt Generators =====
-
-    // Infer a sensible stack when user picked "Let AI Decide" or skipped
     function inferStack() {
         const s = state.answers;
         const features = Array.isArray(s.features) ? s.features : [];
@@ -760,7 +1129,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getIdeaSummary() {
-        const s = state.answers;
         const parts = [];
         parts.push(state.idea);
         if (state.ideaElaborated && state.ideaElaborated !== state.idea) {
@@ -769,7 +1137,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return parts.join(' — ');
     }
 
-    // Build a natural-language summary paragraph from the answers
     function buildSummary() {
         const s = state.answers;
         const idea = getIdeaSummary();
@@ -783,10 +1150,16 @@ document.addEventListener('DOMContentLoaded', () => {
         let summary = `Build a ${platform.toLowerCase()}`;
         summary += `: ${idea}.`;
 
-        if (audience) summary += ` Target users: ${audience}.`;
+        if (audience) {
+            const aud = Array.isArray(audience) ? audience.join(', ') : audience;
+            summary += ` Target users: ${aud}.`;
+        }
         if (vibe) summary += ` The design should feel ${vibe.toLowerCase()}.`;
         if (features.length > 0) summary += ` Core features include: ${features.join(', ').toLowerCase()}.`;
-        if (custom) summary += ` Also: ${custom}.`;
+        if (custom) {
+            const c = Array.isArray(custom) ? custom.join(', ') : custom;
+            summary += ` Also: ${c}.`;
+        }
         if (auth && auth !== 'No Auth Needed') summary += ` Authentication via ${auth.toLowerCase()}.`;
         if (auth === 'No Auth Needed') summary += ` No authentication needed.`;
 
@@ -800,16 +1173,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         QUESTIONS.forEach(q => {
             const val = s[q.id];
-            if (val === null || val === undefined) {
-                // Don't output "use your best judgment" for every empty field
-                // Only include sections that have real answers
-                return;
-            }
+            if (val === null || val === undefined) return;
             const display = Array.isArray(val) ? val.join(', ') : val;
             lines.push(`## ${q.specSection}\n${display}\n`);
         });
 
-        // Add inferred stack if user skipped it
         if (!s.stack || s.stack === 'Let AI Decide') {
             lines.push(`## Suggested Tech Stack\n${inferStack()} (choose the best fit if you disagree)\n`);
         }
@@ -825,6 +1193,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const scope = s.scope || 'MVP';
         const isExploring = scope.includes('Exploring');
         const isPrototype = scope.includes('Prototype');
+        const extras = s.extras;
+        const extrasStr = Array.isArray(extras) ? extras.join(', ') : extras;
 
         if (target === 'claude') {
             let prompt = `${summary}\n\n`;
@@ -832,7 +1202,6 @@ document.addEventListener('DOMContentLoaded', () => {
             prompt += spec + '\n';
             prompt += `## Build Instructions\n`;
 
-            // Adapt to scope
             if (isExploring || isPrototype) {
                 prompt += `- This is a ${isExploring ? 'exploration / proof of concept' : 'quick prototype'}. Focus on getting a working demo fast, skip perfectionism\n`;
                 prompt += `- Use ${stack}. Keep the architecture simple — no over-engineering\n`;
@@ -848,14 +1217,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 prompt += `- Start with the database schema, then the API layer, then the frontend\n`;
             }
 
-            if (s.vibe) {
-                prompt += `- Design: ${s.vibe} aesthetic. Every screen should match this vibe\n`;
-            }
-
-            if (s.extras) {
-                prompt += `- Important: ${s.extras}\n`;
-            }
-
+            if (s.vibe) prompt += `- Design: ${s.vibe} aesthetic. Every screen should match this vibe\n`;
+            if (extrasStr) prompt += `- Important: ${extrasStr}\n`;
             prompt += `- Write clean, modern code. Explain key decisions as you build\n`;
 
             return prompt;
@@ -878,9 +1241,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             prompt += `- Make the UI responsive and accessible\n`;
-
             if (s.vibe) prompt += `- Design: ${s.vibe} aesthetic throughout\n`;
-            if (s.extras) prompt += `- Note: ${s.extras}\n`;
+            if (extrasStr) prompt += `- Note: ${extrasStr}\n`;
 
             return prompt;
         }
@@ -896,7 +1258,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 features.forEach(f => { prompt += `- ${f}\n`; });
             }
 
-            if (s.features_custom) prompt += `- ${s.features_custom}\n`;
+            if (s.features_custom) {
+                const c = Array.isArray(s.features_custom) ? s.features_custom : [s.features_custom];
+                c.forEach(f => { prompt += `- ${f}\n`; });
+            }
 
             prompt += `\nDesign:\n`;
             prompt += `- ${vibe} aesthetic\n`;
@@ -904,36 +1269,219 @@ document.addEventListener('DOMContentLoaded', () => {
             prompt += `- Use shadcn/ui components\n`;
             prompt += `- Include realistic placeholder content and data\n`;
 
-            if (s.audience) prompt += `- Optimized for: ${s.audience}\n`;
+            if (s.audience) {
+                const aud = Array.isArray(s.audience) ? s.audience.join(', ') : s.audience;
+                prompt += `- Optimized for: ${aud}\n`;
+            }
             if (s.auth && s.auth !== 'No Auth Needed') prompt += `- Include sign-in flow (${s.auth})\n`;
-            if (s.extras) prompt += `- ${s.extras}\n`;
+            if (extrasStr) prompt += `- ${extrasStr}\n`;
 
             return prompt;
         }
 
-        // markdown — clean spec only
+        // json
+        if (target === 'json') {
+            const jsonObj = {
+                idea: state.idea,
+                elaboration: state.ideaElaborated || undefined,
+                spec: {}
+            };
+            QUESTIONS.forEach(q => {
+                const val = state.answers[q.id];
+                if (val !== null && val !== undefined) {
+                    jsonObj.spec[q.id] = val;
+                }
+            });
+            if (!state.answers.stack || state.answers.stack === 'Let AI Decide') {
+                jsonObj.spec.suggestedStack = inferStack();
+            }
+            return JSON.stringify(jsonObj, null, 2);
+        }
+
+        // markdown
         return `# ${state.idea}\n\n${summary}\n\n---\n\n${spec}`;
     }
 
-    // Export buttons
-    document.querySelectorAll('.btn-export').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const target = btn.dataset.target;
-            const text = generatePrompt(target);
-            navigator.clipboard.writeText(text).then(() => {
-                btn.classList.add('copied');
-                const svgEl = btn.querySelector('svg');
-                const svgHtml = svgEl ? svgEl.outerHTML : '';
-                const original = btn.innerHTML;
-                btn.innerHTML = svgHtml + ' Copied!';
-                showToast(`${target.charAt(0).toUpperCase() + target.slice(1)} prompt copied to clipboard`);
-                setTimeout(() => {
-                    btn.classList.remove('copied');
-                    btn.innerHTML = original;
-                }, 2000);
-            });
+    // ===== #9 Prompt Preview Modal =====
+    let currentExportTarget = null;
+
+    function openPromptModal(target) {
+        const label = target.charAt(0).toUpperCase() + target.slice(1);
+        currentExportTarget = target;
+        promptModalTitle.textContent = `${label} Prompt — Preview & Edit`;
+        const content = generatePrompt(target);
+        promptModalEditor.value = content;
+        updatePromptMeta(content);
+        promptModal.classList.remove('hidden');
+        promptModalEditor.focus();
+    }
+
+    function updatePromptMeta(text) {
+        const chars = text.length;
+        const tokens = Math.ceil(chars / 4);
+        promptCharCount.textContent = `${chars.toLocaleString()} chars`;
+        promptTokenEst.textContent = `~${tokens.toLocaleString()} tokens`;
+    }
+
+    promptModalEditor.addEventListener('input', () => {
+        updatePromptMeta(promptModalEditor.value);
+    });
+
+    function closePromptModal() {
+        promptModal.classList.add('hidden');
+        currentExportTarget = null;
+    }
+
+    $('prompt-modal-close').addEventListener('click', closePromptModal);
+    promptModal.querySelector('.prompt-modal-backdrop').addEventListener('click', closePromptModal);
+
+    $('prompt-modal-copy').addEventListener('click', () => {
+        navigator.clipboard.writeText(promptModalEditor.value).then(() => {
+            showToast('Prompt copied to clipboard');
+            closePromptModal();
         });
     });
+
+    $('prompt-modal-download').addEventListener('click', () => {
+        const ext = currentExportTarget === 'markdown' ? 'md' : 'txt';
+        downloadFile(`app-plan-${currentExportTarget}.${ext}`, promptModalEditor.value);
+        closePromptModal();
+    });
+
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') {
+            if (!promptModal.classList.contains('hidden')) closePromptModal();
+            if (!compareModal.classList.contains('hidden')) closeCompareModal();
+            if (!kbdModal.classList.contains('hidden')) closeKbdModal();
+        }
+        // ? key for keyboard help (only when not typing in an input)
+        if (e.key === '?' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) {
+            toggleKbdModal();
+        }
+        // Ctrl+Z for undo
+        if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+            e.preventDefault();
+            undoLastAnswer();
+        }
+    });
+
+    // Export buttons — now open preview modal instead of direct copy
+    document.querySelectorAll('.btn-export').forEach(btn => {
+        const target = btn.dataset.target;
+        if (!target) return;
+
+        // #3 File downloads
+        if (target === 'download-md') {
+            btn.addEventListener('click', () => {
+                downloadFile('app-plan.md', generatePrompt('markdown'));
+                showToast('Downloaded app-plan.md');
+            });
+            return;
+        }
+        if (target === 'download-txt') {
+            btn.addEventListener('click', () => {
+                downloadFile('app-plan.txt', generatePrompt('claude'));
+                showToast('Downloaded app-plan.txt');
+            });
+            return;
+        }
+
+        // #4 Share URL
+        if (target === 'share') {
+            btn.addEventListener('click', () => {
+                const shareData = {
+                    idea: state.idea,
+                    elab: state.ideaElaborated,
+                    a: state.answers
+                };
+                const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(shareData))));
+                const url = window.location.origin + window.location.pathname + '#plan=' + encoded;
+                navigator.clipboard.writeText(url).then(() => {
+                    showToast('Shareable link copied to clipboard');
+                });
+            });
+            return;
+        }
+
+        // JSON export
+        if (target === 'json') {
+            btn.addEventListener('click', () => {
+                openPromptModal('json');
+            });
+            return;
+        }
+
+        // Regular export targets open the preview modal
+        btn.addEventListener('click', () => {
+            openPromptModal(target);
+        });
+    });
+
+    // ===== #3 File Download Helper =====
+    function downloadFile(filename, content) {
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    // ===== #4 Load from URL hash =====
+    function loadFromHash() {
+        const hash = window.location.hash;
+        if (!hash.startsWith('#plan=')) return;
+        try {
+            const encoded = hash.substring(6);
+            const json = decodeURIComponent(escape(atob(encoded)));
+            const data = JSON.parse(json);
+            if (data.idea) {
+                // Load into state and start the completed view
+                state.idea = data.idea;
+                state.ideaElaborated = data.elab || '';
+                state.answers = data.a || {};
+                state.currentStep = QUESTIONS.length;
+                state.complete = true;
+
+                landing.classList.add('hidden');
+                planner.classList.remove('hidden');
+                if (isMobile()) mobileSpecToggle.classList.remove('hidden');
+                ideaDisplay.textContent = state.idea;
+
+                convMessages.innerHTML = '';
+                specBody.innerHTML = '';
+
+                addBotMessage(`Loaded shared plan for "${escapeHtml(state.idea)}".`);
+
+                const fullIdea = state.ideaElaborated
+                    ? `<strong>${escapeHtml(state.idea)}</strong><br><span style="color:var(--text-secondary)">${escapeHtml(state.ideaElaborated)}</span>`
+                    : `<strong>${escapeHtml(state.idea)}</strong>`;
+                updateSpecSection('Idea', fullIdea);
+
+                QUESTIONS.forEach(q => {
+                    const val = state.answers[q.id];
+                    if (val !== null && val !== undefined) {
+                        updateSpecSection(q.specSection, q.specRender(val));
+                    } else {
+                        updateSpecSection(q.specSection, '<span class="spec-tag spec-tag-orange">AI will decide</span>');
+                    }
+                });
+
+                updateProgress();
+                specFooter.classList.remove('hidden');
+                convInputArea.innerHTML = '';
+                addBotMessage('This plan was shared via link. Use the export buttons to copy a prompt.');
+
+                // Clear hash so it doesn't reload on refresh
+                history.replaceState(null, '', window.location.pathname);
+            }
+        } catch (e) {
+            // Invalid hash, ignore
+        }
+    }
 
     // ===== Save / History =====
     const STORAGE_KEY = 'app-planner-history';
@@ -948,17 +1496,51 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(plans.slice(0, 20)));
     }
 
-    function renderHistory() {
+    function renderHistory(searchQuery) {
         const plans = loadHistory();
         if (plans.length === 0) {
             historySection.classList.add('hidden');
+            historySearchWrap.classList.add('hidden');
             return;
         }
 
         historySection.classList.remove('hidden');
         historyList.innerHTML = '';
 
-        plans.forEach((plan, i) => {
+        // Show search when 4+ plans
+        if (plans.length >= 4) {
+            historySearchWrap.classList.remove('hidden');
+        } else {
+            historySearchWrap.classList.add('hidden');
+        }
+
+        // Compare button in header
+        const h3 = historySection.querySelector('h3');
+        h3.innerHTML = 'Recent plans';
+        if (plans.length >= 2) {
+            const compareBtn = document.createElement('button');
+            compareBtn.className = 'btn-compare';
+            compareBtn.textContent = 'Compare';
+            compareBtn.addEventListener('click', e => {
+                e.stopPropagation();
+                openCompareModal();
+            });
+            h3.appendChild(compareBtn);
+        }
+
+        // Filter by search
+        const query = (searchQuery || '').toLowerCase().trim();
+        const filtered = query
+            ? plans.filter(p => p.idea.toLowerCase().includes(query) || (p.ideaElaborated || '').toLowerCase().includes(query))
+            : plans;
+
+        if (filtered.length === 0) {
+            historyList.innerHTML = '<div style="color:var(--text-muted);font-size:0.85rem;padding:0.5rem 0">No matching plans.</div>';
+            return;
+        }
+
+        filtered.forEach((plan, i) => {
+            const realIdx = plans.indexOf(plan);
             const item = document.createElement('div');
             item.className = 'history-item';
             const date = new Date(plan.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -972,18 +1554,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 </button>
             `;
 
-            // Click to load
             item.querySelector('.history-item-text').addEventListener('click', () => {
                 loadPlan(plan);
             });
 
-            // Delete
             item.querySelector('.history-item-delete').addEventListener('click', e => {
                 e.stopPropagation();
                 const updated = loadHistory();
-                updated.splice(i, 1);
+                updated.splice(realIdx, 1);
                 saveHistory(updated);
-                renderHistory();
+                renderHistory(historySearchInput.value);
                 showToast('Plan deleted');
             });
 
@@ -1000,9 +1580,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         landing.classList.add('hidden');
         planner.classList.remove('hidden');
+        if (isMobile()) mobileSpecToggle.classList.remove('hidden');
         ideaDisplay.textContent = state.idea;
 
-        // Rebuild spec
         convMessages.innerHTML = '';
         specBody.innerHTML = '';
 
@@ -1025,7 +1605,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateProgress();
         specFooter.classList.remove('hidden');
         convInputArea.innerHTML = '';
-        addBotMessage('Your spec is restored. Use the export buttons to copy a prompt.');
+        addBotMessage('Your spec is restored. Use the export buttons to copy a prompt, or click any spec section to revise it.');
     }
 
     $('save-plan').addEventListener('click', () => {
@@ -1042,13 +1622,96 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast('Plan saved!');
     });
 
-    // Init history on load
+    // ===== #10 Compare Modal =====
+    function openCompareModal() {
+        const plans = loadHistory();
+        if (plans.length < 2) {
+            showToast('Need at least 2 saved plans to compare');
+            return;
+        }
+
+        // Populate selectors
+        compareLeft.innerHTML = '<option value="">Pick plan A...</option>';
+        compareRight.innerHTML = '<option value="">Pick plan B...</option>';
+
+        plans.forEach((plan, i) => {
+            const label = plan.idea.substring(0, 50) + (plan.idea.length > 50 ? '...' : '');
+            compareLeft.innerHTML += `<option value="${i}">${escapeHtml(label)}</option>`;
+            compareRight.innerHTML += `<option value="${i}">${escapeHtml(label)}</option>`;
+        });
+
+        compareGrid.classList.add('hidden');
+        compareGrid.innerHTML = '';
+        compareModal.classList.remove('hidden');
+
+        function onSelectChange() {
+            const a = compareLeft.value;
+            const b = compareRight.value;
+            if (a === '' || b === '' || a === b) {
+                compareGrid.classList.add('hidden');
+                return;
+            }
+            renderComparison(plans[parseInt(a)], plans[parseInt(b)]);
+        }
+
+        compareLeft.onchange = onSelectChange;
+        compareRight.onchange = onSelectChange;
+    }
+
+    function renderComparison(planA, planB) {
+        compareGrid.innerHTML = '';
+        compareGrid.classList.remove('hidden');
+
+        // Idea row
+        addCompareRow('Idea', planA.idea, planB.idea);
+
+        // Each question
+        QUESTIONS.forEach(q => {
+            const valA = planA.answers[q.id];
+            const valB = planB.answers[q.id];
+            const dispA = valA == null ? '(skipped)' : (Array.isArray(valA) ? valA.join(', ') : valA);
+            const dispB = valB == null ? '(skipped)' : (Array.isArray(valB) ? valB.join(', ') : valB);
+            addCompareRow(q.specSection, dispA, dispB);
+        });
+    }
+
+    function addCompareRow(label, valA, valB) {
+        const same = valA === valB;
+        const diffClass = same ? 'compare-cell-same' : 'compare-cell-diff';
+
+        const labelCell = document.createElement('div');
+        labelCell.className = 'compare-cell compare-cell-label';
+        labelCell.textContent = label;
+
+        const cellA = document.createElement('div');
+        cellA.className = `compare-cell compare-cell-a ${diffClass}`;
+        cellA.textContent = valA;
+
+        const cellB = document.createElement('div');
+        cellB.className = `compare-cell compare-cell-b ${diffClass}`;
+        cellB.textContent = valB;
+
+        compareGrid.appendChild(labelCell);
+        compareGrid.appendChild(cellA);
+        compareGrid.appendChild(cellB);
+    }
+
+    function closeCompareModal() {
+        compareModal.classList.add('hidden');
+    }
+
+    $('compare-modal-close').addEventListener('click', closeCompareModal);
+    compareModal.querySelector('.prompt-modal-backdrop').addEventListener('click', closeCompareModal);
+
+    // ===== Init =====
     renderHistory();
+    loadFromHash();
 
     // ===== Utility =====
     function escapeHtml(str) {
+        if (str == null) return '';
         const div = document.createElement('div');
-        div.textContent = str;
+        div.textContent = String(str);
         return div.innerHTML;
     }
 });
