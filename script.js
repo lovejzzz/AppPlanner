@@ -264,6 +264,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const stepStepper = $('step-stepper');
     const stepperFill = $('stepper-fill');
     const stepperLabels = $('stepper-labels');
+    const cursorGlow = $('cursor-glow');
 
     // ===== Theme =====
     function initTheme() {
@@ -281,6 +282,28 @@ document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     $('theme-toggle').addEventListener('click', toggleTheme);
     $('theme-toggle-2').addEventListener('click', toggleTheme);
+
+    // ===== Cursor Glow Follower =====
+    let cursorGlowActive = false;
+    const landingEl = $('landing');
+
+    landingEl.addEventListener('mouseenter', () => {
+        cursorGlowActive = true;
+        cursorGlow.classList.add('visible');
+    });
+
+    landingEl.addEventListener('mouseleave', () => {
+        cursorGlowActive = false;
+        cursorGlow.classList.remove('visible');
+    });
+
+    document.addEventListener('mousemove', e => {
+        if (!cursorGlowActive) return;
+        requestAnimationFrame(() => {
+            cursorGlow.style.left = e.clientX + 'px';
+            cursorGlow.style.top = e.clientY + 'px';
+        });
+    });
 
     // ===== Cycling Placeholder =====
     const PLACEHOLDERS = [
@@ -1132,12 +1155,37 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ===== Progress =====
+    let lastPct = 0;
+
+    function animateCounter(from, to, el) {
+        const duration = 400;
+        const start = performance.now();
+        el.classList.add('bump');
+        setTimeout(() => el.classList.remove('bump'), 300);
+
+        function tick(now) {
+            const elapsed = now - start;
+            const progress = Math.min(elapsed / duration, 1);
+            // Ease out cubic
+            const eased = 1 - Math.pow(1 - progress, 3);
+            const current = Math.round(from + (to - from) * eased);
+            el.textContent = `${current}%`;
+            if (progress < 1) requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+    }
+
     function updateProgress() {
         const total = QUESTIONS.length;
         const current = Math.max(0, state.currentStep);
         const pct = state.complete ? 100 : Math.round((current / total) * 100);
         ringFill.setAttribute('stroke-dasharray', `${pct}, 100`);
-        ringText.textContent = `${pct}%`;
+
+        if (pct !== lastPct) {
+            animateCounter(lastPct, pct, ringText);
+            lastPct = pct;
+        }
+
         updateStepper();
     }
 
