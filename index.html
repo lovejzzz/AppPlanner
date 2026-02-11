@@ -15,15 +15,41 @@
         <div class="landing-inner">
             <div class="brand">
                 <div class="logo">
-                    <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
-                        <rect width="44" height="44" rx="12" fill="url(#g1)"/>
-                        <path d="M12 15h20M12 22h14M12 29h8" stroke="#fff" stroke-width="2.5" stroke-linecap="round" opacity="0.95"/>
-                        <circle cx="35" cy="15" r="3" fill="#ec4899" opacity="0.8"/>
-                        <defs><linearGradient id="g1" x1="0" y1="0" x2="44" y2="44"><stop stop-color="#7c6bf5"/><stop offset="0.5" stop-color="#a855f7"/><stop offset="1" stop-color="#ec4899"/></linearGradient></defs>
+                    <svg width="52" height="52" viewBox="0 0 52 52" fill="none">
+                        <rect width="52" height="52" rx="14" fill="url(#g1)"/>
+                        <path d="M14 17h24M14 26h16M14 35h10" stroke="#fff" stroke-width="2.8" stroke-linecap="round" opacity="0.95"/>
+                        <circle cx="40" cy="17" r="3.5" fill="#ec4899" opacity="0.85"/>
+                        <circle cx="36" cy="35" r="2.5" fill="#34d399" opacity="0.7"/>
+                        <defs><linearGradient id="g1" x1="0" y1="0" x2="52" y2="52"><stop stop-color="#7c6bf5"/><stop offset="0.5" stop-color="#a855f7"/><stop offset="1" stop-color="#ec4899"/></linearGradient></defs>
                     </svg>
                 </div>
                 <h1>App Planner</h1>
                 <p class="tagline">Describe your idea. Answer a few questions. Get a prompt you can build with.</p>
+            </div>
+
+            <!-- Feature pillars -->
+            <div class="feature-pillars">
+                <div class="pillar">
+                    <div class="pillar-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    </div>
+                    <span class="pillar-title">10 Smart Questions</span>
+                    <span class="pillar-desc">Guided flow that covers everything</span>
+                </div>
+                <div class="pillar">
+                    <div class="pillar-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                    </div>
+                    <span class="pillar-title">AI-Ready Prompts</span>
+                    <span class="pillar-desc">Tailored for Claude, Cursor & v0</span>
+                </div>
+                <div class="pillar">
+                    <div class="pillar-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    </div>
+                    <span class="pillar-title">Export Anywhere</span>
+                    <span class="pillar-desc">Copy, download, or share a link</span>
+                </div>
             </div>
 
             <div class="idea-input-wrap">
@@ -106,6 +132,14 @@
                 </div>
             </div>
 
+            <!-- Step stepper bar -->
+            <div class="step-stepper" id="step-stepper">
+                <div class="stepper-track">
+                    <div class="stepper-fill" id="stepper-fill"></div>
+                </div>
+                <div class="stepper-labels" id="stepper-labels"></div>
+            </div>
+
             <div class="conv-messages" id="conv-messages">
                 <!-- Messages appear here -->
             </div>
@@ -133,6 +167,15 @@
             </div>
             <div class="spec-body" id="spec-body">
                 <div class="spec-empty">
+                    <div class="spec-empty-illustration">
+                        <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                            <rect x="8" y="8" width="48" height="48" rx="10" stroke="currentColor" stroke-width="1.5" opacity="0.2"/>
+                            <path class="spec-empty-line1" d="M18 22h28" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.15"/>
+                            <path class="spec-empty-line2" d="M18 32h20" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.15"/>
+                            <path class="spec-empty-line3" d="M18 42h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.15"/>
+                            <circle class="spec-empty-dot" cx="50" cy="22" r="3" fill="currentColor" opacity="0.2"/>
+                        </svg>
+                    </div>
                     <p>Your spec will build here as you answer questions...</p>
                 </div>
             </div>

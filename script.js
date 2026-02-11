@@ -261,6 +261,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const templateChipsEl = $('template-chips');
     const historySearchWrap = $('history-search-wrap');
     const historySearchInput = $('history-search');
+    const stepStepper = $('step-stepper');
+    const stepperFill = $('stepper-fill');
+    const stepperLabels = $('stepper-labels');
 
     // ===== Theme =====
     function initTheme() {
@@ -278,6 +281,67 @@ document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     $('theme-toggle').addEventListener('click', toggleTheme);
     $('theme-toggle-2').addEventListener('click', toggleTheme);
+
+    // ===== Cycling Placeholder =====
+    const PLACEHOLDERS = [
+        'A habit tracker that guilts you into exercising...',
+        'A recipe app that suggests meals from fridge photos...',
+        'A budget planner with AI spending insights...',
+        'A team standup bot for Slack with async updates...',
+        'A mood journal with AI-generated reflection prompts...',
+        'A bookmark manager that auto-tags and summarizes...',
+    ];
+    let placeholderIdx = 0;
+    let placeholderInterval;
+
+    function cyclePlaceholder() {
+        if (document.activeElement === ideaInput || ideaInput.value.trim()) return;
+        placeholderIdx = (placeholderIdx + 1) % PLACEHOLDERS.length;
+        ideaInput.style.transition = 'opacity 0.2s';
+        ideaInput.style.opacity = '0.5';
+        setTimeout(() => {
+            ideaInput.placeholder = PLACEHOLDERS[placeholderIdx];
+            ideaInput.style.opacity = '1';
+        }, 200);
+    }
+
+    placeholderInterval = setInterval(cyclePlaceholder, 3500);
+    ideaInput.addEventListener('focus', () => { clearInterval(placeholderInterval); ideaInput.style.opacity = '1'; });
+    ideaInput.addEventListener('blur', () => {
+        if (!ideaInput.value.trim()) {
+            placeholderInterval = setInterval(cyclePlaceholder, 3500);
+        }
+    });
+
+    // ===== Step Stepper =====
+    function initStepper() {
+        stepperLabels.innerHTML = '';
+        QUESTIONS.forEach((q, i) => {
+            const lbl = document.createElement('span');
+            lbl.className = 'stepper-label';
+            lbl.textContent = q.specSection;
+            lbl.setAttribute('data-step', i);
+            stepperLabels.appendChild(lbl);
+        });
+    }
+
+    function updateStepper() {
+        const total = QUESTIONS.length;
+        const current = Math.max(0, state.currentStep);
+        const pct = state.complete ? 100 : Math.round((current / total) * 100);
+        stepperFill.style.width = pct + '%';
+
+        stepperLabels.querySelectorAll('.stepper-label').forEach((lbl, i) => {
+            lbl.classList.remove('active', 'done');
+            if (i === current && !state.complete) {
+                lbl.classList.add('active');
+            } else if (i < current || state.complete) {
+                lbl.classList.add('done');
+            }
+        });
+    }
+
+    initStepper();
 
     // ===== Render Templates =====
     let activeTemplateCat = 'all';
@@ -480,7 +544,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let toastTimer;
     function showToast(msg) {
         clearTimeout(toastTimer);
-        toastEl.textContent = msg;
+        toastEl.innerHTML = `<span class="toast-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></span>${escapeHtml(msg)}`;
         toastEl.classList.add('show');
         toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2500);
     }
@@ -508,9 +572,16 @@ document.addEventListener('DOMContentLoaded', () => {
     $('back-btn').addEventListener('click', () => {
         planner.classList.add('hidden');
         landing.classList.remove('hidden');
+        landing.classList.add('slide-in');
+        setTimeout(() => landing.classList.remove('slide-in'), 350);
         mobileSpecToggle.classList.add('hidden');
         specPane.classList.remove('mobile-visible');
         resetState();
+        // Restart placeholder cycling
+        if (!ideaInput.value.trim()) {
+            clearInterval(placeholderInterval);
+            placeholderInterval = setInterval(cyclePlaceholder, 3500);
+        }
     });
 
     function resetState() {
@@ -521,7 +592,18 @@ document.addEventListener('DOMContentLoaded', () => {
         state.complete = false;
         convMessages.innerHTML = '';
         convInputArea.innerHTML = '';
-        specBody.innerHTML = '<div class="spec-empty"><p>Your spec will build here as you answer questions...</p></div>';
+        specBody.innerHTML = `<div class="spec-empty">
+            <div class="spec-empty-illustration">
+                <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                    <rect x="8" y="8" width="48" height="48" rx="10" stroke="currentColor" stroke-width="1.5" opacity="0.2"/>
+                    <path class="spec-empty-line1" d="M18 22h28" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.15"/>
+                    <path class="spec-empty-line2" d="M18 32h20" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.15"/>
+                    <path class="spec-empty-line3" d="M18 42h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.15"/>
+                    <circle class="spec-empty-dot" cx="50" cy="22" r="3" fill="currentColor" opacity="0.2"/>
+                </svg>
+            </div>
+            <p>Your spec will build here as you answer questions...</p>
+        </div>`;
         specFooter.classList.add('hidden');
         specCompleteness.innerHTML = '';
         updateProgress();
@@ -573,14 +655,33 @@ document.addEventListener('DOMContentLoaded', () => {
         state.idea = ideaInput.value.trim();
         if (!state.idea) return;
 
-        landing.classList.add('hidden');
-        planner.classList.remove('hidden');
-        if (isMobile()) mobileSpecToggle.classList.remove('hidden');
+        // Smooth page transition
+        landing.classList.add('fade-out');
+        setTimeout(() => {
+            landing.classList.add('hidden');
+            landing.classList.remove('fade-out');
+            planner.classList.remove('hidden');
+            planner.classList.add('slide-in');
+            if (isMobile()) mobileSpecToggle.classList.remove('hidden');
+            setTimeout(() => planner.classList.remove('slide-in'), 400);
+        }, 300);
+
         ideaDisplay.textContent = state.idea;
 
         // Clear previous
         convMessages.innerHTML = '';
-        specBody.innerHTML = '<div class="spec-empty"><p>Your spec will build here as you answer questions...</p></div>';
+        specBody.innerHTML = `<div class="spec-empty">
+            <div class="spec-empty-illustration">
+                <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                    <rect x="8" y="8" width="48" height="48" rx="10" stroke="currentColor" stroke-width="1.5" opacity="0.2"/>
+                    <path class="spec-empty-line1" d="M18 22h28" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.15"/>
+                    <path class="spec-empty-line2" d="M18 32h20" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.15"/>
+                    <path class="spec-empty-line3" d="M18 42h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.15"/>
+                    <circle class="spec-empty-dot" cx="50" cy="22" r="3" fill="currentColor" opacity="0.2"/>
+                </svg>
+            </div>
+            <p>Your spec will build here as you answer questions...</p>
+        </div>`;
         specFooter.classList.add('hidden');
         state.answers = {};
         state.ideaElaborated = '';
@@ -1034,9 +1135,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateProgress() {
         const total = QUESTIONS.length;
         const current = Math.max(0, state.currentStep);
-        const pct = Math.round((current / total) * 100);
+        const pct = state.complete ? 100 : Math.round((current / total) * 100);
         ringFill.setAttribute('stroke-dasharray', `${pct}, 100`);
         ringText.textContent = `${pct}%`;
+        updateStepper();
     }
 
     // ===== Spec Panel =====
