@@ -8,6 +8,58 @@ document.addEventListener('DOMContentLoaded', () => {
         complete: false
     };
 
+    // ===== Templates Library =====
+    const TEMPLATES = [
+        { cat: 'business', label: 'SaaS Dashboard', idea: 'A SaaS dashboard with team management, billing, and analytics' },
+        { cat: 'business', label: 'E-commerce Store', idea: 'An e-commerce store selling handmade crafts with cart and checkout' },
+        { cat: 'business', label: 'Invoice Generator', idea: 'An invoice and estimate generator for freelancers with PDF export and payment tracking' },
+        { cat: 'business', label: 'CRM Tool', idea: 'A lightweight CRM to track leads, deals, and customer conversations' },
+        { cat: 'social', label: 'Social Video App', idea: 'A mobile-first social app for sharing short video clips with friends' },
+        { cat: 'social', label: 'Community Forum', idea: 'A community discussion forum with categories, upvotes, and user profiles' },
+        { cat: 'social', label: 'Event Platform', idea: 'An event planning platform where users can create, share, and RSVP to local events' },
+        { cat: 'creative', label: 'Portfolio Site', idea: 'A personal portfolio site with blog, project gallery, and contact form' },
+        { cat: 'creative', label: 'Recipe Book', idea: 'A personal recipe book app where users save, tag, and share their favorite recipes' },
+        { cat: 'creative', label: 'Mood Board', idea: 'A visual mood board tool for designers to collect and arrange inspiration images' },
+        { cat: 'utility', label: 'Habit Tracker', idea: 'A daily habit tracker with streaks, stats, and gentle reminders' },
+        { cat: 'utility', label: 'Budget Planner', idea: 'A personal budget planner that categorizes expenses and shows monthly trends' },
+        { cat: 'utility', label: 'Bookmark Manager', idea: 'A bookmark manager with tags, search, and link preview screenshots' },
+        { cat: 'utility', label: 'Note Taking App', idea: 'A markdown-based note taking app with folders, tags, and full-text search' },
+    ];
+
+    // ===== Auto-save Draft =====
+    const DRAFT_KEY = 'app-planner-draft';
+
+    function saveDraft() {
+        if (!state.idea) return;
+        const draft = {
+            idea: state.idea,
+            ideaElaborated: state.ideaElaborated,
+            answers: { ...state.answers },
+            currentStep: state.currentStep,
+            complete: state.complete,
+            ts: Date.now()
+        };
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    }
+
+    function loadDraft() {
+        try {
+            const raw = localStorage.getItem(DRAFT_KEY);
+            if (!raw) return null;
+            const draft = JSON.parse(raw);
+            // Discard drafts older than 24 hours
+            if (Date.now() - draft.ts > 24 * 60 * 60 * 1000) {
+                clearDraft();
+                return null;
+            }
+            return draft;
+        } catch { return null; }
+    }
+
+    function clearDraft() {
+        localStorage.removeItem(DRAFT_KEY);
+    }
+
     // ===== Context Intelligence =====
     const CONTEXT_HINTS = {
         platform: {
@@ -199,6 +251,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const compareLeft = $('compare-left');
     const compareRight = $('compare-right');
     const compareGrid = $('compare-grid');
+    const draftBanner = $('draft-banner');
+    const undoBtn = $('undo-btn');
+    const kbdModal = $('kbd-modal');
+    const specCompleteness = $('spec-completeness');
+    const promptCharCount = $('prompt-char-count');
+    const promptTokenEst = $('prompt-token-est');
+    const confettiCanvas = $('confetti-canvas');
+    const templateChipsEl = $('template-chips');
+    const historySearchWrap = $('history-search-wrap');
+    const historySearchInput = $('history-search');
 
     // ===== Theme =====
     function initTheme() {
@@ -216,6 +278,203 @@ document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     $('theme-toggle').addEventListener('click', toggleTheme);
     $('theme-toggle-2').addEventListener('click', toggleTheme);
+
+    // ===== Render Templates =====
+    let activeTemplateCat = 'all';
+
+    function renderTemplates() {
+        templateChipsEl.innerHTML = '';
+        const filtered = activeTemplateCat === 'all'
+            ? TEMPLATES
+            : TEMPLATES.filter(t => t.cat === activeTemplateCat);
+
+        filtered.forEach(t => {
+            const chip = document.createElement('button');
+            chip.className = 'template-chip';
+            chip.textContent = t.label;
+            chip.addEventListener('click', () => {
+                ideaInput.value = t.idea;
+                startBtn.disabled = false;
+                ideaInput.focus();
+            });
+            templateChipsEl.appendChild(chip);
+        });
+    }
+
+    document.querySelectorAll('.template-cat-chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.template-cat-chip').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            activeTemplateCat = btn.dataset.cat;
+            renderTemplates();
+        });
+    });
+
+    renderTemplates();
+
+    // ===== Draft Banner =====
+    function showDraftBanner() {
+        const draft = loadDraft();
+        if (draft && draft.idea) {
+            draftBanner.classList.remove('hidden');
+            draftBanner.querySelector('span').textContent = `Draft: "${draft.idea.substring(0, 40)}${draft.idea.length > 40 ? '...' : ''}" — Resume?`;
+        }
+    }
+
+    $('draft-resume').addEventListener('click', () => {
+        const draft = loadDraft();
+        if (!draft) return;
+        draftBanner.classList.add('hidden');
+        resumeFromDraft(draft);
+    });
+
+    $('draft-discard').addEventListener('click', () => {
+        clearDraft();
+        draftBanner.classList.add('hidden');
+    });
+
+    function resumeFromDraft(draft) {
+        state.idea = draft.idea;
+        state.ideaElaborated = draft.ideaElaborated || '';
+        state.answers = draft.answers || {};
+        state.currentStep = draft.currentStep || 0;
+        state.complete = draft.complete || false;
+
+        landing.classList.add('hidden');
+        planner.classList.remove('hidden');
+        if (isMobile()) mobileSpecToggle.classList.remove('hidden');
+        ideaDisplay.textContent = state.idea;
+
+        convMessages.innerHTML = '';
+        specBody.innerHTML = '';
+
+        addBotMessage(`Resuming your draft for "${escapeHtml(state.idea)}".`);
+
+        // Rebuild spec from saved answers
+        const fullIdea = state.ideaElaborated
+            ? `<strong>${escapeHtml(state.idea)}</strong><br><span style="color:var(--text-secondary)">${escapeHtml(state.ideaElaborated)}</span>`
+            : `<strong>${escapeHtml(state.idea)}</strong>`;
+        updateSpecSection('Idea', fullIdea);
+
+        QUESTIONS.forEach((q, i) => {
+            const val = state.answers[q.id];
+            if (val !== null && val !== undefined) {
+                updateSpecSection(q.specSection, q.specRender(val));
+            }
+        });
+
+        updateProgress();
+        updateCompleteness();
+
+        if (state.complete) {
+            specFooter.classList.remove('hidden');
+            addBotMessage('Your spec is restored. Use the export buttons or click spec sections to revise.');
+        } else {
+            askCurrentQuestion();
+        }
+    }
+
+    showDraftBanner();
+
+    // ===== Undo Button =====
+    undoBtn.addEventListener('click', () => undoLastAnswer());
+
+    function undoLastAnswer() {
+        if (state.complete) return;
+        const prevStep = state.currentStep - 1;
+        if (prevStep < 0) return;
+        goBackToQuestion(prevStep);
+    }
+
+    // ===== Keyboard Shortcuts Modal =====
+    $('keyboard-help-btn').addEventListener('click', () => toggleKbdModal());
+    $('kbd-modal-close').addEventListener('click', () => closeKbdModal());
+    kbdModal.querySelector('.prompt-modal-backdrop').addEventListener('click', () => closeKbdModal());
+
+    function toggleKbdModal() {
+        kbdModal.classList.toggle('hidden');
+    }
+
+    function closeKbdModal() {
+        kbdModal.classList.add('hidden');
+    }
+
+    // ===== Spec Completeness Indicator =====
+    function updateCompleteness() {
+        specCompleteness.innerHTML = '';
+        QUESTIONS.forEach((q, i) => {
+            const dot = document.createElement('div');
+            dot.className = 'completeness-dot';
+            dot.title = q.specSection;
+            const val = state.answers[q.id];
+            if (i === state.currentStep && !state.complete) {
+                dot.classList.add('current');
+            } else if (val !== undefined && val !== null) {
+                dot.classList.add('answered');
+            } else if (val === null) {
+                dot.classList.add('skipped');
+            }
+            specCompleteness.appendChild(dot);
+        });
+    }
+
+    // ===== Confetti =====
+    function fireConfetti() {
+        const ctx = confettiCanvas.getContext('2d');
+        confettiCanvas.width = window.innerWidth;
+        confettiCanvas.height = window.innerHeight;
+
+        const particles = [];
+        const colors = ['#7c6bf5', '#34d399', '#fb923c', '#f87171', '#60a5fa', '#fbbf24'];
+
+        for (let i = 0; i < 80; i++) {
+            particles.push({
+                x: Math.random() * confettiCanvas.width,
+                y: -20 - Math.random() * 100,
+                w: 6 + Math.random() * 6,
+                h: 4 + Math.random() * 4,
+                vx: (Math.random() - 0.5) * 4,
+                vy: 2 + Math.random() * 4,
+                rot: Math.random() * Math.PI * 2,
+                rotSpeed: (Math.random() - 0.5) * 0.15,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                life: 1
+            });
+        }
+
+        let frame = 0;
+        function animate() {
+            ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+            let alive = false;
+
+            particles.forEach(p => {
+                if (p.life <= 0) return;
+                alive = true;
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.08;
+                p.rot += p.rotSpeed;
+                p.life -= 0.008;
+
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.rot);
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+                ctx.restore();
+            });
+
+            frame++;
+            if (alive && frame < 180) {
+                requestAnimationFrame(animate);
+            } else {
+                ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+            }
+        }
+
+        animate();
+    }
 
     // ===== Toast =====
     let toastTimer;
@@ -240,13 +499,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     startBtn.addEventListener('click', startPlanning);
 
-    // Template chips
-    document.querySelectorAll('.template-chip').forEach(chip => {
-        chip.addEventListener('click', () => {
-            ideaInput.value = chip.dataset.idea;
-            startBtn.disabled = false;
-            ideaInput.focus();
-        });
+    // History search
+    historySearchInput.addEventListener('input', () => {
+        renderHistory(historySearchInput.value);
     });
 
     // Back button
@@ -268,7 +523,9 @@ document.addEventListener('DOMContentLoaded', () => {
         convInputArea.innerHTML = '';
         specBody.innerHTML = '<div class="spec-empty"><p>Your spec will build here as you answer questions...</p></div>';
         specFooter.classList.add('hidden');
+        specCompleteness.innerHTML = '';
         updateProgress();
+        clearDraft();
     }
 
     // ===== Mobile Spec Toggle (#6) =====
@@ -448,6 +705,7 @@ document.addEventListener('DOMContentLoaded', () => {
             addBotMessage(q.question);
             renderInput(q);
             updateProgress();
+            updateCompleteness();
         }, delay);
     }
 
@@ -715,8 +973,11 @@ document.addEventListener('DOMContentLoaded', () => {
         convInputArea.innerHTML = '';
 
         updateSpecSection(q.specSection, q.specRender(value));
+        highlightSpecSection(q.specSection);
 
         state.currentStep++;
+        updateCompleteness();
+        saveDraft();
         setTimeout(() => askCurrentQuestion(), 200);
     }
 
@@ -729,9 +990,21 @@ document.addEventListener('DOMContentLoaded', () => {
         updateSpecSection(q.specSection, '<span class="spec-tag spec-tag-orange">AI will decide</span>');
 
         state.currentStep++;
+        updateCompleteness();
+        saveDraft();
         addBotMessageWithTyping('No worries, the AI will figure this out.').then(() => {
             setTimeout(() => askCurrentQuestion(), 200);
         });
+    }
+
+    // ===== Auto-scroll + highlight spec section =====
+    function highlightSpecSection(sectionTitle) {
+        const section = specBody.querySelector(`[data-spec-section="${CSS.escape(sectionTitle)}"]`);
+        if (!section) return;
+        section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        section.classList.remove('spec-section-highlight');
+        void section.offsetWidth;
+        section.classList.add('spec-section-highlight');
     }
 
     // ===== #2 Go-back / Undo =====
@@ -827,9 +1100,13 @@ document.addEventListener('DOMContentLoaded', () => {
             `<br><br>Hit <strong>Save Plan</strong> to revisit this later.`
         ).then(() => {
             specFooter.classList.remove('hidden');
+            updateCompleteness();
+            clearDraft();
 
+            // Celebration
             ringFill.style.stroke = 'var(--green)';
             setTimeout(() => { ringFill.style.stroke = ''; }, 2000);
+            fireConfetti();
         });
     }
 
@@ -1002,6 +1279,25 @@ document.addEventListener('DOMContentLoaded', () => {
             return prompt;
         }
 
+        // json
+        if (target === 'json') {
+            const jsonObj = {
+                idea: state.idea,
+                elaboration: state.ideaElaborated || undefined,
+                spec: {}
+            };
+            QUESTIONS.forEach(q => {
+                const val = state.answers[q.id];
+                if (val !== null && val !== undefined) {
+                    jsonObj.spec[q.id] = val;
+                }
+            });
+            if (!state.answers.stack || state.answers.stack === 'Let AI Decide') {
+                jsonObj.spec.suggestedStack = inferStack();
+            }
+            return JSON.stringify(jsonObj, null, 2);
+        }
+
         // markdown
         return `# ${state.idea}\n\n${summary}\n\n---\n\n${spec}`;
     }
@@ -1013,10 +1309,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const label = target.charAt(0).toUpperCase() + target.slice(1);
         currentExportTarget = target;
         promptModalTitle.textContent = `${label} Prompt — Preview & Edit`;
-        promptModalEditor.value = generatePrompt(target);
+        const content = generatePrompt(target);
+        promptModalEditor.value = content;
+        updatePromptMeta(content);
         promptModal.classList.remove('hidden');
         promptModalEditor.focus();
     }
+
+    function updatePromptMeta(text) {
+        const chars = text.length;
+        const tokens = Math.ceil(chars / 4);
+        promptCharCount.textContent = `${chars.toLocaleString()} chars`;
+        promptTokenEst.textContent = `~${tokens.toLocaleString()} tokens`;
+    }
+
+    promptModalEditor.addEventListener('input', () => {
+        updatePromptMeta(promptModalEditor.value);
+    });
 
     function closePromptModal() {
         promptModal.classList.add('hidden');
@@ -1043,6 +1352,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key === 'Escape') {
             if (!promptModal.classList.contains('hidden')) closePromptModal();
             if (!compareModal.classList.contains('hidden')) closeCompareModal();
+            if (!kbdModal.classList.contains('hidden')) closeKbdModal();
+        }
+        // ? key for keyboard help (only when not typing in an input)
+        if (e.key === '?' && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) {
+            toggleKbdModal();
+        }
+        // Ctrl+Z for undo
+        if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+            e.preventDefault();
+            undoLastAnswer();
         }
     });
 
@@ -1080,6 +1399,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 navigator.clipboard.writeText(url).then(() => {
                     showToast('Shareable link copied to clipboard');
                 });
+            });
+            return;
+        }
+
+        // JSON export
+        if (target === 'json') {
+            btn.addEventListener('click', () => {
+                openPromptModal('json');
             });
             return;
         }
@@ -1169,17 +1496,25 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(plans.slice(0, 20)));
     }
 
-    function renderHistory() {
+    function renderHistory(searchQuery) {
         const plans = loadHistory();
         if (plans.length === 0) {
             historySection.classList.add('hidden');
+            historySearchWrap.classList.add('hidden');
             return;
         }
 
         historySection.classList.remove('hidden');
         historyList.innerHTML = '';
 
-        // #10 Compare button in header
+        // Show search when 4+ plans
+        if (plans.length >= 4) {
+            historySearchWrap.classList.remove('hidden');
+        } else {
+            historySearchWrap.classList.add('hidden');
+        }
+
+        // Compare button in header
         const h3 = historySection.querySelector('h3');
         h3.innerHTML = 'Recent plans';
         if (plans.length >= 2) {
@@ -1193,7 +1528,19 @@ document.addEventListener('DOMContentLoaded', () => {
             h3.appendChild(compareBtn);
         }
 
-        plans.forEach((plan, i) => {
+        // Filter by search
+        const query = (searchQuery || '').toLowerCase().trim();
+        const filtered = query
+            ? plans.filter(p => p.idea.toLowerCase().includes(query) || (p.ideaElaborated || '').toLowerCase().includes(query))
+            : plans;
+
+        if (filtered.length === 0) {
+            historyList.innerHTML = '<div style="color:var(--text-muted);font-size:0.85rem;padding:0.5rem 0">No matching plans.</div>';
+            return;
+        }
+
+        filtered.forEach((plan, i) => {
+            const realIdx = plans.indexOf(plan);
             const item = document.createElement('div');
             item.className = 'history-item';
             const date = new Date(plan.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -1214,9 +1561,9 @@ document.addEventListener('DOMContentLoaded', () => {
             item.querySelector('.history-item-delete').addEventListener('click', e => {
                 e.stopPropagation();
                 const updated = loadHistory();
-                updated.splice(i, 1);
+                updated.splice(realIdx, 1);
                 saveHistory(updated);
-                renderHistory();
+                renderHistory(historySearchInput.value);
                 showToast('Plan deleted');
             });
 

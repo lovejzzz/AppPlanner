@@ -1280,3 +1280,260 @@ button:focus-visible, .chip:focus-visible, select:focus-visible {
     .tagline { font-size: 0.92rem; }
     .msg { max-width: 95%; }
 }
+
+/* ===== Draft Resume Banner ===== */
+.draft-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border: 1.5px solid var(--accent);
+    border-radius: var(--radius-sm);
+    background: var(--accent-subtle);
+    animation: inputFadeIn 0.3s ease;
+}
+
+.draft-banner-text {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.88rem;
+    color: var(--text-primary);
+}
+
+.draft-banner-text svg { color: var(--accent); flex-shrink: 0; }
+
+.draft-banner-actions {
+    display: flex;
+    gap: 0.4rem;
+    flex-shrink: 0;
+}
+
+.btn-draft-resume {
+    padding: 0.35rem 0.85rem;
+    border: none;
+    border-radius: var(--radius-xs);
+    background: var(--accent);
+    color: #fff;
+    font-family: var(--font);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--transition);
+}
+
+.btn-draft-resume:hover { background: var(--accent-hover); }
+
+.btn-draft-discard {
+    padding: 0.35rem 0.85rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xs);
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: var(--font);
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.btn-draft-discard:hover { border-color: var(--red); color: var(--red); }
+
+/* ===== Template Categories ===== */
+.templates-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.templates-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.template-categories {
+    display: flex;
+    gap: 0.3rem;
+}
+
+.template-cat-chip {
+    padding: 0.25rem 0.65rem;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: transparent;
+    color: var(--text-muted);
+    font-family: var(--font);
+    font-size: 0.72rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.template-cat-chip:hover {
+    color: var(--text-secondary);
+    border-color: var(--accent);
+}
+
+.template-cat-chip.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+}
+
+.template-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+/* ===== History Search ===== */
+.history-search-wrap {
+    margin-bottom: 0.6rem;
+}
+
+.history-search {
+    width: 100%;
+    padding: 0.45rem 0.85rem;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font);
+    font-size: 0.82rem;
+    outline: none;
+    transition: border-color var(--transition);
+}
+
+.history-search:focus {
+    border-color: var(--accent);
+}
+
+/* ===== Spec Completeness Indicator ===== */
+.spec-completeness {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+    padding: 0 0.4rem;
+}
+
+.completeness-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: background 0.3s ease, transform 0.3s ease;
+}
+
+.completeness-dot.answered {
+    background: var(--green);
+    transform: scale(1.1);
+}
+
+.completeness-dot.skipped {
+    background: var(--orange);
+}
+
+.completeness-dot.current {
+    background: var(--accent);
+    animation: dotPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes dotPulse {
+    0%, 100% { transform: scale(1); opacity: 0.7; }
+    50% { transform: scale(1.4); opacity: 1; }
+}
+
+/* ===== Prompt Meta Badges ===== */
+.prompt-modal-meta {
+    display: flex;
+    gap: 0.4rem;
+    margin-left: auto;
+    margin-right: 0.75rem;
+}
+
+.prompt-meta-badge {
+    padding: 0.15rem 0.55rem;
+    border-radius: 10px;
+    background: var(--bg-tertiary);
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    font-weight: 500;
+    font-family: var(--mono);
+    white-space: nowrap;
+}
+
+/* ===== Keyboard Shortcuts Modal ===== */
+.kbd-modal-content {
+    max-width: 480px;
+}
+
+.kbd-body {
+    padding: 1.25rem;
+}
+
+.kbd-group {
+    margin-bottom: 1.25rem;
+}
+
+.kbd-group:last-child {
+    margin-bottom: 0;
+}
+
+.kbd-group h4 {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    margin-bottom: 0.6rem;
+}
+
+.kbd-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.kbd-row span:last-child {
+    margin-left: auto;
+    text-align: right;
+}
+
+kbd {
+    display: inline-block;
+    padding: 0.12rem 0.45rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1.6;
+    box-shadow: 0 1px 0 var(--border);
+}
+
+/* ===== Confetti Canvas ===== */
+.confetti-canvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 999;
+}
+
+/* ===== Spec Section Active Highlight ===== */
+.spec-section-highlight {
+    animation: specHighlight 1.2s ease;
+}
+
+@keyframes specHighlight {
+    0% { box-shadow: 0 0 0 3px var(--accent-glow); border-color: var(--accent); }
+    100% { box-shadow: none; border-color: var(--border-subtle); }
+}
